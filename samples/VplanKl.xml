@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vp>
+  <kopf>
+    <datei>VplanKl20261028.xml</datei>
+    <titel>Mittwoch, 28. Oktober 2026 </titel>
+    <schulname>Gymnasium Burgdorf</schulname>
+    <datum>28.10.2026, 07:41</datum>
+    <kopfinfo>
+      <abwesendl>Frau Agena (5-6), Frau Arnold, Frau Baade (5-6), Frau Bierschenk (5-6), Frau Baumann (5-6), Herr Daneke (5-6), Herr Deutschmann (5-6), Herr Erdmann (5-6), Frau Fischer (5-6), Frau Friedrich, Herr Gabler (5-6), Herr Ginser (5-6), Frau Glaser (5-6), Frau Goldenstein (5-6), Frau Golenia (5-6), Frau Geisler (5-6), Frau Hegermann (5-6), Frau Heidemann (5-6), Frau Hinrichs (5-6), Herr Hofmann (5-6), Frau Hölscher (5-6), Herr Höweling (5-6), Herr Haupt (5-6), Herr Kessel-Perschke (5-6), Frau Keune (5-6), Frau Kittel, Herr Knebel (5-6), Herr Kurre, Frau Lehmann (5-6), Frau Matthiesen-Hallmann (5-6), Herr Mäckel (5-6), Frau Mensak (5-6), Frau Meyer (5-6), Frau Meyer-Sonnenberg (5-6), Frau Neufeld (5-6), Frau Puschmann (5-6), Herr Petersen (5-6), Frau Poschadel (5-6), Herr Puckhaber (5-6), Frau Raffel-Nottbohm (5-6), Frau Rode (5-6), Frau Reinisch (5-6), Herr Rode (5-6), Frau Rüggeberg, Frau Ruschepaul-Baltz (5-6), Frau Schneider (5-6), Frau Seidel (1-2,5-6), Herr Schimetzek (5-6), Frau Stark-Brodhun (5-6), Frau Stoppe (5-6), Frau Toussaint (5-6), Frau Vertretung, Frau Wagner (5-6), Frau Wernicke (5-6), Herr Wyrwoll (5-6), Herr Zehrt (5-6)</abwesendl>
+      <aenderungl>Herr Appel, Frau Cordts, Herr El-Bathich, Herr Fakih, Herr Freischmidt, Herr Gehb, Frau Kemmer, Frau Manicke, Herr Mäckel, Frau Meyer, Frau Oerke, Frau Rheinhardt, Frau Schildknecht, Frau Schnack, Herr Trisch, Frau Wortmann</aenderungl>
+      <aenderungk>10A, 10C, 10E, 10F, 11A, 11B, 12, 13, 5B, 5F, 5G, 6B, 6D, 6F, 7B, 7C, 7D, 7F, 8B, 8C, 8D, 8E, 8F, 9A, 9C, 9D, 9E, 9F, DAZ</aenderungk>
+    </kopfinfo>
+  </kopf>
+  <freietage>
+    <ft>260803</ft>
+    <ft>260804</ft>
+    <ft>260805</ft>
+    <ft>260806</ft>
+    <ft>260807</ft>
+    <ft>260810</ft>
+    <ft>260811</ft>
+    <ft>260812</ft>
+    <ft>261012</ft>
+    <ft>261013</ft>
+    <ft>261014</ft>
+    <ft>261015</ft>
+    <ft>261016</ft>
+    <ft>261019</ft>
+    <ft>261020</ft>
+    <ft>261021</ft>
+    <ft>261022</ft>
+    <ft>261023</ft>
+    <ft>261223</ft>
+    <ft>261224</ft>
+    <ft>261225</ft>
+    <ft>261228</ft>
+    <ft>261229</ft>
+    <ft>261230</ft>
+    <ft>261231</ft>
+    <ft>270101</ft>
+    <ft>270104</ft>
+    <ft>270105</ft>
+    <ft>270106</ft>
+    <ft>270107</ft>
+    <ft>270108</ft>
+    <ft>270201</ft>
+    <ft>270202</ft>
+    <ft>270322</ft>
+    <ft>270323</ft>
+    <ft>270324</ft>
+    <ft>270325</ft>
+    <ft>270326</ft>
+    <ft>270329</ft>
+    <ft>270330</ft>
+    <ft>270331</ft>
+    <ft>270401</ft>
+    <ft>270402</ft>
+    <ft>270506</ft>
+    <ft>270507</ft>
+    <ft>270517</ft>
+    <ft>270518</ft>
+    <ft>270708</ft>
+    <ft>270709</ft>
+    <ft>270712</ft>
+    <ft>270713</ft>
+    <ft>270714</ft>
+    <ft>270715</ft>
+    <ft>270716</ft>
+    <ft>270719</ft>
+    <ft>270720</ft>
+    <ft>270721</ft>
+    <ft>270722</ft>
+    <ft>270723</ft>
+    <ft>270726</ft>
+    <ft>270727</ft>
+    <ft>270728</ft>
+    <ft>270729</ft>
+    <ft>270730</ft>
+  </freietage>
+  <aufsichten>
+    <aufsichtzeile>
+      <aufsichtinfo>11:05:  P2 - Hof 1/2a  --&gt;  Herr Freischmidt (für Frau Poschadel)</aufsichtinfo>
+    </aufsichtzeile>
+  </aufsichten>
+  <haupt>
+    <aktion>
+      <klasse>5B</klasse>
+      <stunde>5-6</stunde>
+      <fach>EK</fach>
+      <lehrer legeaendert="ae">Herr Appel</lehrer>
+      <raum>A 010</raum>
+      <info>für EK Herr Ginser</info>
+    </aktion>
+    <aktion>
+      <klasse>5F</klasse>
+      <stunde>5-6</stunde>
+      <fach>DE</fach>
+      <lehrer legeaendert="ae">Frau Schnack</lehrer>
+      <raum>A 122</raum>
+      <info>für DE Frau Raffel-Nottbohm</info>
+    </aktion>
+    <aktion>
+      <klasse>5G</klasse>
+      <stunde>5-6</stunde>
+      <fach>MU</fach>
+      <lehrer legeaendert="ae">Frau Cordts</lehrer>
+      <raum rageaendert="ae">B 037</raum>
+      <info>für MU Frau Stoppe</info>
+    </aktion>
+    <aktion>
+      <klasse>6B</klasse>
+      <stunde>5-6</stunde>
+      <fach>MA</fach>
+      <lehrer legeaendert="ae">Frau Wortmann</lehrer>
+      <raum rageaendert="ae">Bib</raum>
+      <info>für MA Frau Bierschenk, nur OGS-Schüler, frei für alle anderen Schüler</info>
+    </aktion>
+    <aktion>
+      <klasse>6D</klasse>
+      <stunde>5-6</stunde>
+      <fach>Vf</fach>
+      <lehrer legeaendert="ae">Frau Wortmann</lehrer>
+      <raum rageaendert="ae">Bib</raum>
+      <info>für Vf Frau Hölscher, nur OGS-Schüler, frei für alle anderen Schüler</info>
+    </aktion>
+    <aktion>
+      <klasse>6F</klasse>
+      <stunde>5-6</stunde>
+      <fach>MA</fach>
+      <lehrer legeaendert="ae">Frau Wortmann</lehrer>
+      <raum rageaendert="ae">Bib</raum>
+      <info>für MA Herr Höweling, nur OGS-Schüler, frei für alle anderen Schüler</info>
+    </aktion>
+    <aktion>
+      <klasse>7B</klasse>
+      <stunde>3-4</stunde>
+      <fach>EK</fach>
+      <lehrer>Herr Gehb</lehrer>
+      <raum>A 102</raum>
+      <info>verlegt von St.5-6; GE Herr Kurre fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>7B</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">Vf</fach>
+      <lehrer legeaendert="ae">Frau Wortmann</lehrer>
+      <raum rageaendert="ae">Bib</raum>
+      <info>nur OGS-Schüler, frei für alle anderen Schüler</info>
+    </aktion>
+    <aktion>
+      <klasse>7B</klasse>
+      <stunde>5-6</stunde>
+      <fach>---</fach>
+      <lehrer></lehrer>
+      <raum></raum>
+      <info>EK Herr Gehb verlegt nach St.3-4</info>
+    </aktion>
+    <aktion>
+      <klasse>7C</klasse>
+      <stunde>3-4</stunde>
+      <fach fageaendert="ae">KU</fach>
+      <lehrer legeaendert="ae">Frau Meyer</lehrer>
+      <raum rageaendert="ae">KuR1</raum>
+      <info>für DE Frau Kemmer</info>
+    </aktion>
+    <aktion>
+      <klasse>7C</klasse>
+      <stunde>5-6</stunde>
+      <fach>KU</fach>
+      <lehrer legeaendert="ae">Frau Wortmann</lehrer>
+      <raum rageaendert="ae">Bib</raum>
+      <info>für KU Frau Meyer, nur OGS-Schüler, frei für alle anderen Schüler</info>
+    </aktion>
+    <aktion>
+      <klasse>7D</klasse>
+      <stunde>1-2</stunde>
+      <fach>DE</fach>
+      <lehrer legeaendert="ae">Herr Fakih</lehrer>
+      <raum>A 104</raum>
+      <info>für DE Frau Seidel</info>
+    </aktion>
+    <aktion>
+      <klasse>7D</klasse>
+      <stunde>5-6</stunde>
+      <fach>GE</fach>
+      <lehrer legeaendert="ae">Frau Wortmann</lehrer>
+      <raum rageaendert="ae">Bib</raum>
+      <info>für GE Herr Gabler, nur OGS-Schüler, frei für alle anderen Schüler</info>
+    </aktion>
+    <aktion>
+      <klasse>7F</klasse>
+      <stunde>5-6</stunde>
+      <fach>MA</fach>
+      <lehrer legeaendert="ae">Frau Wortmann</lehrer>
+      <raum rageaendert="ae">Bib</raum>
+      <info>für MA Frau Wernicke, nur OGS-Schüler, frei für alle anderen Schüler</info>
+    </aktion>
+    <aktion>
+      <klasse>8B,8C,8E/ wn2</klasse>
+      <stunde>3-4</stunde>
+      <fach>WN</fach>
+      <lehrer legeaendert="ae">Frau Manicke</lehrer>
+      <raum>B 235</raum>
+      <info>für WN Frau Kittel</info>
+    </aktion>
+    <aktion>
+      <klasse>8C</klasse>
+      <stunde>1-2</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>DE Frau Rüggeberg fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>8C,8D/ re2</klasse>
+      <stunde>3-4</stunde>
+      <fach>RE</fach>
+      <lehrer>Herr El-Bathich</lehrer>
+      <raum rageaendert="ae">B 232</raum>
+      <info></info>
+    </aktion>
+    <aktion>
+      <klasse>8D</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>DE Frau Fischer fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>8E</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>CH Herr Daneke fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>8F</klasse>
+      <stunde>5-6</stunde>
+      <fach>EN</fach>
+      <lehrer legeaendert="ae">Frau Oerke</lehrer>
+      <raum>B 130</raum>
+      <info>für EN Herr Kurre</info>
+    </aktion>
+    <aktion>
+      <klasse>9A</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">SP</fach>
+      <lehrer legeaendert="ae">Frau Schildknecht</lehrer>
+      <raum rageaendert="ae">SpH1, ---</raum>
+      <info>für MU Frau Ruschepaul-Baltz</info>
+    </aktion>
+    <aktion>
+      <klasse>9C</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>DE Frau Mensak fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>9D</klasse>
+      <stunde>5-6</stunde>
+      <fach>PO</fach>
+      <lehrer>Herr Trisch</lehrer>
+      <raum>B 232, B 233</raum>
+      <info>Bewerbungstraining</info>
+    </aktion>
+    <aktion>
+      <klasse>9E</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>BI Frau Reinisch fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>9F</klasse>
+      <stunde>3-4</stunde>
+      <fach>PO</fach>
+      <lehrer>Herr Mäckel</lehrer>
+      <raum>B 135</raum>
+      <info>statt Do (29.10.) St.7-8; DE Frau Rüggeberg fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>9F</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>SP Herr Wyrwoll fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>10A</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">SP</fach>
+      <lehrer legeaendert="ae">Frau Schildknecht</lehrer>
+      <raum rageaendert="ae">SpH2</raum>
+      <info>für PO Herr Knebel</info>
+    </aktion>
+    <aktion>
+      <klasse>10C</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>PH Frau Meyer-Sonnenberg fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>10E</klasse>
+      <stunde>7-8</stunde>
+      <fach fageaendert="ae">Vf</fach>
+      <lehrer legeaendert="ae">Herr El-Bathich</lehrer>
+      <raum rageaendert="ae">C 00M</raum>
+      <info>für CH Frau Rheinhardt</info>
+    </aktion>
+    <aktion>
+      <klasse>10F/ re1</klasse>
+      <stunde>1-2</stunde>
+      <fach>RE</fach>
+      <lehrer>Frau Cordts</lehrer>
+      <raum rageaendert="ae">B 134</raum>
+      <info></info>
+    </aktion>
+    <aktion>
+      <klasse>10F</klasse>
+      <stunde>3</stunde>
+      <fach fageaendert="ae">PO</fach>
+      <lehrer legeaendert="ae">Frau Kemmer</lehrer>
+      <raum rageaendert="ae">B 230</raum>
+      <info>PH Herr Fakih fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>10F</klasse>
+      <stunde>4</stunde>
+      <fach>PH</fach>
+      <lehrer>Herr Fakih</lehrer>
+      <raum rageaendert="ae">B 230</raum>
+      <info></info>
+    </aktion>
+    <aktion>
+      <klasse>11A</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>PO Frau Poschadel fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>11B</klasse>
+      <stunde>1-2</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>EN Herr Kurre fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>11B</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>SP Frau Stark-Brodhun fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>12/ MA1</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>MA1 Frau Wagner fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>12/ SP2</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>SP2 Frau Lehmann fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>12/ BI2</klasse>
+      <stunde>7-8</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>BI2 Frau Schildknecht fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>12/ GE1</klasse>
+      <stunde>7-8</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>GE1 Frau Arnold fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>13/ wn1</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>wn1 Frau Kittel fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>13/ de2</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>de2 Frau Kemmer fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>13/ re1</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>re1 Frau Cordts fällt aus</info>
+    </aktion>
+    <aktion>
+      <klasse>DAZ</klasse>
+      <stunde>5-6</stunde>
+      <fach fageaendert="ae">---</fach>
+      <lehrer legeaendert="ae"></lehrer>
+      <raum rageaendert="ae"></raum>
+      <info>DAZ Herr Rode fällt aus, SuS nehmen am Unterricht der Regelklassen teil</info>
+    </aktion>
+  </haupt>
+</vp>

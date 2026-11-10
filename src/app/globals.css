@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --vp-primary: #4f46e5;
+  --vp-bg: #f8fafc;
+  --vp-surface: #ffffff;
+  --vp-text: #0f172a;
+  --vp-muted: #64748b;
+  --vp-border: #e2e8f0;
+  --vp-accent: #ef4444;
+  --vp-accent-soft: #fef2f2;
+}
+
+html.dark {
+  --vp-primary: #6366f1;
+  --vp-bg: #090d16;
+  --vp-surface: #111827;
+  --vp-text: #f8fafc;
+  --vp-muted: #94a3b8;
+  --vp-border: #1e293b;
+  --vp-accent: #f87171;
+  --vp-accent-soft: #2a1215;
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  background-color: var(--vp-bg);
+  color: var(--vp-text);
+}
+
+@layer utilities {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pl-safe { padding-left: env(safe-area-inset-left); }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .animate-slide-up { animation: slide-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .animate-fade { animation: fade 0.16s ease-out; }
+  .vp-surface {
+    background-color: var(--vp-surface);
+    border-color: var(--vp-border);
+    color: var(--vp-text);
+  }
+  .vp-muted {
+    color: var(--vp-muted);
+  }
+  .vp-btn-primary {
+    background-color: var(--vp-primary);
+    color: #ffffff;
+  }
+  .vp-badge-accent {
+    background-color: var(--vp-accent);
+    color: #ffffff;
+  }
+  .vp-changed-box {
+    background-color: var(--vp-accent-soft);
+    border-color: var(--vp-accent);
+  }
+}
+
+@keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up, .animate-fade { animation: none; }
+}
