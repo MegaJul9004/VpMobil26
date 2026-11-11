@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n web,worker -c cyan,magenta \"next dev\" \"tsx watch worker.ts\"",
+    "dev": "concurrently -n web,worker -c cyan,magenta \"next dev -p 3005\" \"tsx watch worker.ts\"",
     "build": "next build",
-    "start": "concurrently -n web,worker -c cyan,magenta \"next start\" \"tsx worker.ts\"",
+    "start": "concurrently -n web,worker -c cyan,magenta \"next start -p 3005\" \"tsx worker.ts\"",
     "worker": "tsx worker.ts",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
