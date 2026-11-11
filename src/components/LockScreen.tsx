@@ -39,7 +39,7 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
           <div className="vp-btn-primary mb-3 flex h-14 w-14 items-center justify-center rounded-2xl shadow-md">
             <Lock size={26} />
           </div>
-          <h1 className="text-xl font-extrabold">VpMobil24 geschützt</h1>
+          <h1 className="text-xl font-extrabold">VpMobil26 geschützt</h1>
           <p className="vp-muted mt-1 text-xs">
             Bitte gib das Zugangs-Passwort ein, um die Web-App zu öffnen.
           </p>

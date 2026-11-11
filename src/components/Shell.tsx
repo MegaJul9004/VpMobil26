@@ -121,7 +121,7 @@ export default function Shell() {
               Vp
             </div>
             <div>
-              <div className="text-base font-extrabold leading-tight">VpMobil24</div>
+              <div className="text-base font-extrabold leading-tight">VpMobil26</div>
               <div className="vp-muted text-[11px]">Vertretungsplan</div>
             </div>
           </button>
@@ -191,7 +191,7 @@ export default function Shell() {
           )}
         </div>
 
-        <p className="vp-muted text-[11px]">VpMobil24 PWA</p>
+        <p className="vp-muted text-[11px]">VpMobil26 PWA</p>
       </aside>
 
       {/* Hauptinhalt */}

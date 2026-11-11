@@ -1,9 +1,9 @@
-/* VpMobil24 Service Worker – Push + Klick-Navigation */
+/* VpMobil26 Service Worker – Push + Klick-Navigation */
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener("push", (event) => {
-  let data = { title: "VpMobil24", body: "Neue Planänderung", url: "/" };
+  let data = { title: "VpMobil26", body: "Neue Planänderung", url: "/" };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch {

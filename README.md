@@ -1,6 +1,6 @@
-# VpMobil24 PWA (Next.js, Drizzle, Mobile-First & Responsive)
+# VpMobil26 PWA (Next.js, Drizzle, Mobile-First & Responsive)
 
-Ein moderner, performanter Web-App-Klon (Progressive Web App) der bekannten Schul-Vertretungsplan-App **VpMobil24** (Indiware / `stundenplan24.de`). Die Anwendung bietet volle Offline- & PWA-Fähigkeit, automatisches 5-Minuten-Hintergrund-Polling auf Planänderungen mit Web-Push-Benachrichtigungen, ein interaktives Zoom-/Pan-Wochenraster sowie ein adaptives, responsives UI für Smartphone, Tablet und Desktop.
+Ein moderner, performanter Web-App-Klon (Progressive Web App) der bekannten Schul-Vertretungsplan-App **VpMobil24** (Indiware / `stundenplan24.de`) unter dem Namen **VpMobil26**. Die Anwendung bietet volle Offline- & PWA-Fähigkeit, automatisches 5-Minuten-Hintergrund-Polling auf Planänderungen mit Web-Push-Benachrichtigungen, ein interaktives Zoom-/Pan-Wochenraster sowie ein adaptives, responsives UI für Smartphone, Tablet und Desktop.
 
 ---
 
@@ -73,7 +73,7 @@ Ein moderner, performanter Web-App-Klon (Progressive Web App) der bekannten Schu
 
 ### 1. Repository klonen & Abhängigkeiten installieren
 ```bash
-cd vpmobil24
+cd VpMobil26
 npm install
 ```
 
@@ -142,7 +142,7 @@ npm run lint
 ## 📂 Projektstruktur
 
 ```
-vpmobil24/
+VpMobil26/
 ├── drizzle/                   # SQL-Migrationsdateien
 ├── public/                    # Statische Assets, PWA-Icons, Manifest & sw.js
 ├── src/
