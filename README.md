@@ -16,7 +16,7 @@ Ein moderner, performanter Web-App-Klon (Progressive Web App) der bekannten Schu
 ### 2. Differenz-Engine & 5-Minuten-Push-Worker
 - **Diffing-Engine (`diffClassDay`):** Vergleicht den aktuellen Stand mit dem letzten Datenbank-Snapshot der abonnierten Klasse und der gewählten Kurse.
 - **Intelligente Benachrichtigungstexte:** Filtert reine Zeitstempel-Änderungen heraus und erzeugt prägnante Änderungsbeschreibungen, z. B.:
-  > `🚨 Planänderung 9F (Do, 12.11.)`  
+  > `🚨 Planänderung [Klasse] (Do, 12.11.)`  
   > `3. Std: Mathe entfällt (Info: Aufgaben im Hefter) | 5. Std: Englisch jetzt in Raum 204 (statt 102) bei Fr. Meyer`
 - **Autonomer Background-Worker (`worker.ts`):** Cronjob (`*/5 * * * *`), der Abonnenten über `web-push` (VAPID) in Echtzeit über Ausfälle, Raum- und Lehrkraftwechsel informiert.
 
@@ -80,20 +80,22 @@ npm install
 *(Hinweis für Umgebungen mit eingeschränkten Install-Skripten: `npm install-scripts approve better-sqlite3 esbuild && npm rebuild better-sqlite3 esbuild`)*
 
 ### 2. Umgebungsvariablen einrichten (`.env`)
-Erstelle eine Datei `.env` im Wurzelverzeichnis:
+Erstelle eine Datei `.env` im Wurzelverzeichnis (Vorlage siehe unten) und trage deine Zugangsdaten ein:
 
 ```env
 # Schulzugangsdaten (Indiware / stundenplan24.de)
-SCHOOL_NUMBER=53111842
-SCHOOL_USER=schueler
-SCHOOL_PASSWORD=s2z5665
-DEFAULT_CLASS=9F
+SCHOOL_NUMBER=deine_schulnummer
+SCHOOL_USER=dein_benutzername
+SCHOOL_PASSWORD=dein_passwort
+DEFAULT_CLASS=deine_standardklasse
 
 # Web-Push (VAPID)
-VAPID_PUBLIC_KEY=DEIN_OEFFENTLICHER_SCHLUESSEL
-VAPID_PRIVATE_KEY=DEIN_PRIVATER_SCHLUESSEL
+VAPID_PUBLIC_KEY=dein_oeffentlicher_vapid_key
+VAPID_PRIVATE_KEY=dein_privater_vapid_key
 VAPID_SUBJECT=mailto:admin@example.com
 ```
+
+> **Sicherheitshinweis:** Die echten Zugangsdaten gehören **ausschließlich** in die lokale `.env`-Datei. Diese Datei ist in `.gitignore` eingetragen und wird niemals im Git-Repository versioniert oder im Frontend-Bundle offengelegt.
 
 > **Tipp:** Ein neues VAPID-Schlüsselpaar kann jederzeit via `npx web-push generate-vapid-keys --json` generiert werden.
 
