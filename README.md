@@ -89,6 +89,9 @@ SCHOOL_USER=dein_benutzername
 SCHOOL_PASSWORD=dein_passwort
 DEFAULT_CLASS=deine_standardklasse
 
+# App-Zugangsschutz (Sperrbildschirm beim Start)
+APP_PASSWORD=dein_app_passwort
+
 # Web-Push (VAPID)
 VAPID_PUBLIC_KEY=dein_oeffentlicher_vapid_key
 VAPID_PRIVATE_KEY=dein_privater_vapid_key

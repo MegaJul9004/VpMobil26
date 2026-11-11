@@ -3,6 +3,7 @@ import { CalendarDays, Home, Settings as SettingsIcon, Star } from "lucide-react
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "@/lib/client/useSettings";
 import { HomeScreen } from "./HomeScreen";
+import { LockScreen } from "./LockScreen";
 import { PlanScreen, type PlanViewMode } from "./PlanScreen";
 import { SettingsScreen } from "./SettingsScreen";
 
@@ -18,9 +19,22 @@ type ViewState =
  */
 export default function Shell() {
   const { settings, update, ready } = useSettings();
+  const [unlocked, setUnlocked] = useState<boolean>(false);
+  const [authChecked, setAuthChecked] = useState<boolean>(false);
   const [view, setView] = useState<ViewState>({ screen: "home" });
   const [lastClass, setLastClass] = useState<string>("");
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
+
+  // Prüfe beim Start, ob bereits ein gültiges Auth-Cookie vorliegt
+  useEffect(() => {
+    fetch("/api/auth")
+      .then((r) => (r.ok ? r.json() : { authenticated: false }))
+      .then((d) => {
+        if (d?.authenticated) setUnlocked(true);
+      })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
 
   // Ansichtsmodus (Tagesplan vs. Wochenplan): Standard Mobile = "day", Desktop/iPad (>= 768px) = "week"
   const [userPickedMode, setUserPickedMode] = useState<PlanViewMode | null>(null);
@@ -36,9 +50,9 @@ export default function Shell() {
 
   const planMode: PlanViewMode = userPickedMode ?? (isDesktop ? "week" : "day");
 
-  // Lade verfügbare Klassen im Hintergrund für die Favoriten-Auswahl
+  // Lade verfügbare Klassen im Hintergrund für die Favoriten-Auswahl (erst nach Entsperrung)
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !unlocked) return;
     const headers: Record<string, string> = {};
     if (settings.schoolNumber) headers["x-school-number"] = settings.schoolNumber;
     if (settings.username) headers["x-school-user"] = settings.username;
@@ -49,7 +63,7 @@ export default function Shell() {
         if (j?.classes?.length) setAvailableClasses(j.classes);
       })
       .catch(() => {});
-  }, [ready, settings.schoolNumber, settings.username, settings.password]);
+  }, [ready, unlocked, settings.schoolNumber, settings.username, settings.password]);
 
   // Browser-History-Synchronisation
   useEffect(() => {
@@ -83,7 +97,11 @@ export default function Shell() {
   const activePlanClass =
     view.screen === "plan" ? view.className : lastClass || configuredFavorites[0] || "";
 
-  if (!ready) return <div className="min-h-dvh" aria-busy="true" />;
+  if (!ready || !authChecked) return <div className="min-h-dvh" aria-busy="true" />;
+
+  if (!unlocked) {
+    return <LockScreen onUnlocked={() => setUnlocked(true)} />;
+  }
 
   return (
     <div className="flex min-h-dvh w-full flex-col md:flex-row">

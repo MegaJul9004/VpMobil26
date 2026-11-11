@@ -4,6 +4,7 @@ import { buildCustomPreset, resolveTheme } from "../src/lib/themes";
 import { formatDayShareText } from "../src/lib/share";
 import { formatDmy, resolveWeekType } from "../src/lib/plan/dates";
 import { clampZoomPan } from "../src/components/WeekCanvas";
+import { computeAuthToken, isValidAuthToken, verifyAppPassword } from "../src/lib/auth";
 
 describe("Settings & Favoriten (Phase 1 & 2)", () => {
   it("Defaults: 3 Favoriten, alle 10 Slots leer (kein Preset wie 9F), rememberWeekZoomPosition=true", () => {
@@ -124,5 +125,18 @@ describe("Wochenplan Zoom & Eck-Begrenzung (WeekCanvas)", () => {
     // Bei 2x Zoom auf 400x600 Viewport (Plan ist 800x1200 groß): x darf nur zwischen -400 und 0 liegen, y zwischen -600 und 0
     expect(clampZoomPan(2.0, 120, 80, 400, 600, 400, 600)).toEqual({ scale: 2, x: 0, y: 0 });
     expect(clampZoomPan(2.0, -900, -950, 400, 600, 400, 600)).toEqual({ scale: 2, x: -400, y: -600 });
+  });
+});
+
+describe("App-Passwortschutz (.env APP_PASSWORD)", () => {
+  it("prüft das Passwort gegen process.env.APP_PASSWORD und validiert Auth-Tokens", () => {
+    process.env.APP_PASSWORD = "1717";
+    expect(verifyAppPassword("1717")).toBe(true);
+    expect(verifyAppPassword(" 1717 ")).toBe(true);
+    expect(verifyAppPassword("0000")).toBe(false);
+    expect(verifyAppPassword("")).toBe(false);
+    const tok = computeAuthToken();
+    expect(isValidAuthToken(tok)).toBe(true);
+    expect(isValidAuthToken("invalid")).toBe(false);
   });
 });
