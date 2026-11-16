@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SETTINGS, clampFavorites, sanitizeSettings } from "../src/lib/settings";
-import { buildCustomPreset, resolveTheme } from "../src/lib/themes";
+import { buildCustomPreset, getSubjectDisplayName, resolveTheme } from "../src/lib/themes";
 import { formatDayShareText } from "../src/lib/share";
 import { formatDmy, resolveWeekType } from "../src/lib/plan/dates";
 import { clampZoomPan } from "../src/components/WeekCanvas";
@@ -116,24 +116,35 @@ describe("Theme-Engine (Phase 5)", () => {
     expect(resolveTheme("my1", [custom]).name).toBe("Neon");
   });
 
-  it("bereinigt uiColors, Fächer-Schrift und Fächer-Farben sauber", () => {
+  it("bereinigt uiColors, ausgeschriebene Fachnamen, Fächer-Schrift und einfarbige Fächer-Farben sauber", () => {
     const s = sanitizeSettings({
       activeThemeId: "system",
+      showFullSubjectNames: true,
+      subjectFullNames: { ma: "Mathe LK" },
+      subjectFontMode: "per-subject",
       subjectFontFamily: "serif",
-      subjectColorMode: "per-subject",
-      allSubjectsStyle: { bgColor: "#112233", bgGradientEnabled: true, bgGradientTo: "#445566" },
+      allSubjectsTextColor: "#112233",
       subjectStyles: {
-        ma: { bgColor: "#ff0000", textColor: "#ffffff" },
+        ma: { bgColor: "#ff0000", textColor: "#ffffff", fontFamily: "mono" },
       },
       uiColors: { enabled: true, bgGradientEnabled: true, bgGradientTo: "#123456" },
     });
     expect(s.activeThemeId).toBe("system");
+    expect(s.showFullSubjectNames).toBe(true);
+    expect(s.subjectFullNames.MA).toBe("Mathe LK");
+    expect(s.subjectFontMode).toBe("per-subject");
     expect(s.subjectFontFamily).toBe("serif");
-    expect(s.subjectColorMode).toBe("per-subject");
-    expect(s.allSubjectsStyle.bgColor).toBe("#112233");
-    expect(s.subjectStyles.MA).toEqual({ bgColor: "#ff0000", textColor: "#ffffff" });
+    expect(s.allSubjectsTextColor).toBe("#112233");
+    expect(s.subjectStyles.MA).toEqual({ bgColor: "#ff0000", textColor: "#ffffff", fontFamily: "mono" });
     expect(s.uiColors.enabled).toBe(true);
     expect(s.uiColors.bgGradientTo).toBe("#123456");
+  });
+
+  it("löst ausgeschriebene Fächernamen korrekt auf (Standard & benutzerdefiniert)", () => {
+    expect(getSubjectDisplayName("MA", true)).toBe("Mathematik");
+    expect(getSubjectDisplayName("MA", false)).toBe("MA");
+    expect(getSubjectDisplayName("MA", true, { MA: "Mathe Spezial" })).toBe("Mathe Spezial");
+    expect(getSubjectDisplayName("DE", true)).toBe("Deutsch");
   });
 });
 

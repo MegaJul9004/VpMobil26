@@ -7,7 +7,7 @@ import {
   type UiColorOverrides,
 } from "./themes";
 
-export type SubjectColorMode = "all" | "per-subject";
+export type SubjectFontMode = "all" | "per-subject";
 
 export interface Settings {
   schoolNumber: string;
@@ -26,15 +26,19 @@ export interface Settings {
   customThemes: CustomTheme[];
   /** Zoom- und Position im Wochenplan merken (Standard: true) */
   rememberWeekZoomPosition: boolean;
-  /** Vollständige Anpassung der App-Farben & Farbverläufe */
+  /** Vollständige Anpassung der UI-Elemente & App-Hintergrund (mit Verlaufs-Option) */
   uiColors: UiColorOverrides;
-  /** Separate Schriftart für Fächer */
+  /** Fächer ausgeschrieben anzeigen ("Mathematik" statt "MA") */
+  showFullSubjectNames: boolean;
+  /** Benutzerdefinierte ausgeschriebene Fachnamen pro Kürzel */
+  subjectFullNames: Record<string, string>;
+  /** Schriftmodus für Fächer: für alle gemeinsam ("all") oder pro Fach einzeln ("per-subject") */
+  subjectFontMode: SubjectFontMode;
+  /** Globale Fächer-Schriftart (bei Modus "all") */
   subjectFontFamily: string;
-  /** Fächerfarben für alle gemeinsam ("all") oder pro Fach einzeln ("per-subject") */
-  subjectColorMode: SubjectColorMode;
-  /** Gemeinsamer Stil für alle Fächer (bei Modus "all") */
-  allSubjectsStyle: SubjectStyle;
-  /** Individuelle Stile pro Fachkürzel (bei Modus "per-subject") */
+  /** Globale Fächer-Schriftfarbe (bei Modus "all", optional) */
+  allSubjectsTextColor: string;
+  /** Individuelle einfarbige Kachelfarbe & ggf. Schrift pro Fachkürzel */
   subjectStyles: Record<string, SubjectStyle>;
 }
 
@@ -57,9 +61,11 @@ export const DEFAULT_SETTINGS: Settings = {
   customThemes: [],
   rememberWeekZoomPosition: true,
   uiColors: { ...DEFAULT_UI_COLORS },
+  showFullSubjectNames: true,
+  subjectFullNames: {},
+  subjectFontMode: "all",
   subjectFontFamily: "inherit",
-  subjectColorMode: "all",
-  allSubjectsStyle: {},
+  allSubjectsTextColor: "",
   subjectStyles: {},
 };
 
@@ -125,8 +131,6 @@ function sanitizeUiColors(raw: unknown): UiColorOverrides {
     bgGradientEnabled: r.bgGradientEnabled === true,
     bgGradientTo: hexOr(r.bgGradientTo, DEFAULT_UI_COLORS.bgGradientTo),
     surface: hexOr(r.surface, DEFAULT_UI_COLORS.surface),
-    surfaceGradientEnabled: r.surfaceGradientEnabled === true,
-    surfaceGradientTo: hexOr(r.surfaceGradientTo, DEFAULT_UI_COLORS.surfaceGradientTo),
   };
 }
 
@@ -135,11 +139,8 @@ function sanitizeSubjectStyle(raw: unknown): SubjectStyle {
   const r = raw as Record<string, unknown>;
   const out: SubjectStyle = {};
   const bg = optHex(r.bgColor);
-  const bgTo = optHex(r.bgGradientTo);
   const tc = optHex(r.textColor);
   if (bg) out.bgColor = bg;
-  if (r.bgGradientEnabled === true) out.bgGradientEnabled = true;
-  if (bgTo) out.bgGradientTo = bgTo;
   if (tc) out.textColor = tc;
   if (typeof r.fontFamily === "string" && r.fontFamily.trim()) {
     out.fontFamily = r.fontFamily.trim().slice(0, 40);
@@ -155,6 +156,18 @@ function sanitizeSubjectStyles(raw: unknown): Record<string, SubjectStyle> {
     if (!key) continue;
     const st = sanitizeSubjectStyle(v);
     if (Object.keys(st).length > 0) out[key] = st;
+  }
+  return out;
+}
+
+function sanitizeFullNames(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>).slice(0, 100)) {
+    const key = k.trim().toUpperCase().slice(0, 20);
+    if (key && typeof v === "string" && v.trim()) {
+      out[key] = v.trim().slice(0, 50);
+    }
   }
   return out;
 }
@@ -177,9 +190,11 @@ export function sanitizeSettings(raw: unknown): Settings {
     customThemes,
     rememberWeekZoomPosition: r.rememberWeekZoomPosition !== false,
     uiColors: sanitizeUiColors(r.uiColors),
+    showFullSubjectNames: r.showFullSubjectNames !== false,
+    subjectFullNames: sanitizeFullNames(r.subjectFullNames),
+    subjectFontMode: r.subjectFontMode === "per-subject" ? "per-subject" : "all",
     subjectFontFamily: str(r.subjectFontFamily, 40) || "inherit",
-    subjectColorMode: r.subjectColorMode === "per-subject" ? "per-subject" : "all",
-    allSubjectsStyle: sanitizeSubjectStyle(r.allSubjectsStyle),
+    allSubjectsTextColor: optHex(r.allSubjectsTextColor) ?? "",
     subjectStyles: sanitizeSubjectStyles(r.subjectStyles),
   };
 }

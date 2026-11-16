@@ -3,7 +3,7 @@ import { AlertTriangle, X } from "lucide-react";
 import { useEffect, type CSSProperties } from "react";
 import type { Lesson } from "@/lib/plan/types";
 import type { Settings } from "@/lib/settings";
-import { resolveSubjectFontCss, type SubjectStyle } from "@/lib/themes";
+import { getSubjectDisplayName, resolveSubjectFontCss, type SubjectStyle } from "@/lib/themes";
 
 export const isChanged = (l: Lesson) =>
   l.cancelled || l.faChanged || l.leChanged || l.raChanged || !!l.info;
@@ -14,36 +14,42 @@ const Old = ({ children }: { children: React.ReactNode }) => (
   </s>
 );
 
-/** Berechnet Kachel- und Schrift-Styles für eine Stunde aus den Fächer-Einstellungen. */
+/** Berechnet einfarbigen Kachel-Style & Schrift-Style für eine Stunde aus den Fächer-Einstellungen. */
 export function resolveLessonStyling(
   l: Lesson,
   settings?: Settings
 ): { cardStyle?: CSSProperties; subjectStyle?: CSSProperties } {
   if (!settings) return {};
-  let sub: SubjectStyle | undefined;
-  if (settings.subjectColorMode === "per-subject") {
-    const k1 = (l.origFa || (l.fa !== "---" ? l.fa : "")).trim().toUpperCase();
-    const k2 = (l.fa && l.fa !== "---" ? l.fa : "").trim().toUpperCase();
-    sub = (k1 && settings.subjectStyles[k1]) || (k2 && settings.subjectStyles[k2]) || undefined;
-  } else {
-    sub = settings.allSubjectsStyle;
-  }
+  const k1 = (l.origFa || (l.fa !== "---" ? l.fa : "")).trim().toUpperCase();
+  const k2 = (l.fa && l.fa !== "---" ? l.fa : "").trim().toUpperCase();
+  const sub: SubjectStyle | undefined =
+    (k1 && settings.subjectStyles[k1]) || (k2 && settings.subjectStyles[k2]) || undefined;
 
+  // Fächer sind immer einfarbig (kein Verlauf) und werden einzeln pro Fach festgelegt
   const cardStyle: CSSProperties = {};
   if (sub?.bgColor) {
     cardStyle.backgroundColor = sub.bgColor;
-    cardStyle.backgroundImage =
-      sub.bgGradientEnabled && sub.bgGradientTo
-        ? `linear-gradient(135deg, ${sub.bgColor}, ${sub.bgGradientTo})`
-        : "none";
+    cardStyle.backgroundImage = "none";
+  }
+  if (l.cancelled) {
+    cardStyle.borderColor = "var(--vp-accent)";
   }
 
+  // Schriftart & Schriftfarbe je nach subjectFontMode ("all" oder "per-subject")
   const subjectStyle: CSSProperties = {};
-  if (sub?.fontFamily) {
-    subjectStyle.fontFamily = resolveSubjectFontCss(sub.fontFamily);
-  }
-  if (sub?.textColor) {
-    subjectStyle.color = sub.textColor;
+  if (settings.subjectFontMode === "per-subject") {
+    if (sub?.fontFamily) {
+      subjectStyle.fontFamily = resolveSubjectFontCss(sub.fontFamily);
+    }
+    if (sub?.textColor) {
+      subjectStyle.color = sub.textColor;
+    } else if (settings.allSubjectsTextColor) {
+      subjectStyle.color = settings.allSubjectsTextColor;
+    }
+  } else {
+    if (settings.allSubjectsTextColor) {
+      subjectStyle.color = settings.allSubjectsTextColor;
+    }
   }
 
   return {
@@ -52,10 +58,52 @@ export function resolveLessonStyling(
   };
 }
 
-/** Fach: Bei Entfall komplett durchgestrichen; bei Fachänderung nur das geänderte Fach farbig. */
-export function Subject({ l, style }: { l: Lesson; style?: CSSProperties }) {
+/** Diagonale Durchstreichung über die gesamte Kachel bei Unterrichtsausfall */
+export function CancelledTileOverlay() {
+  return (
+    <svg
+      data-testid="cancelled-tile-strike"
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-10 h-full w-full"
+      preserveAspectRatio="none"
+    >
+      <line
+        x1="0"
+        y1="100%"
+        x2="100%"
+        y2="0"
+        stroke="var(--vp-accent)"
+        strokeWidth="2.5"
+      />
+      <line
+        x1="0"
+        y1="0"
+        x2="100%"
+        y2="100%"
+        stroke="var(--vp-accent)"
+        strokeWidth="1.5"
+        strokeOpacity="0.45"
+      />
+    </svg>
+  );
+}
+
+/** Fach: Ausgeschrieben (wenn aktiviert), bei Entfall durchgestrichen, bei Änderung nur Fach farbig. */
+export function Subject({
+  l,
+  style,
+  settings,
+}: {
+  l: Lesson;
+  style?: CSSProperties;
+  settings?: Settings;
+}) {
+  const showFull = settings?.showFullSubjectNames !== false;
+  const customNames = settings?.subjectFullNames;
+  const label = (raw: string) => getSubjectDisplayName(raw, showFull, customNames);
+
   if (l.cancelled) {
-    const name = l.origFa || (l.fa && l.fa !== "---" ? l.fa : "") || "Unterricht";
+    const raw = l.origFa || (l.fa && l.fa !== "---" ? l.fa : "") || "Unterricht";
     return (
       <s
         className="vp-subject-font line-through font-bold"
@@ -66,11 +114,12 @@ export function Subject({ l, style }: { l: Lesson; style?: CSSProperties }) {
           textDecorationThickness: "2px",
         }}
       >
-        {name}
+        {label(raw)}
       </s>
     );
   }
-  const oldFa = l.faChanged && l.origFa && l.origFa !== l.fa ? l.origFa : "";
+  const oldFa = l.faChanged && l.origFa && l.origFa !== l.fa ? label(l.origFa) : "";
+  const curFa = label(l.fa || l.origFa);
   const textStyle: CSSProperties = l.faChanged
     ? { ...style, color: "var(--vp-accent)" }
     : style ?? {};
@@ -78,7 +127,7 @@ export function Subject({ l, style }: { l: Lesson; style?: CSSProperties }) {
   return (
     <span className="vp-subject-font" style={textStyle}>
       {oldFa && <Old>{oldFa}</Old>}
-      {l.fa || l.origFa}
+      {curFa}
     </span>
   );
 }
@@ -129,14 +178,15 @@ export function WarnBadge({ cancelled }: { cancelled?: boolean }) {
   );
 }
 
-/** Zeile einer Unterrichtsstunde innerhalb einer Tageskarte (färbt nur geänderte Felder, nicht die ganze Kachel). */
+/** Zeile einer Unterrichtsstunde innerhalb einer Tageskarte (färbt nur geänderte Felder; bei Entfall ist die gesamte Kachel durchgestrichen). */
 export function LessonRow({ l, settings }: { l: Lesson; settings?: Settings }) {
   const { cardStyle, subjectStyle } = resolveLessonStyling(l, settings);
   return (
     <div
       style={cardStyle}
-      className={`flex items-start gap-3 rounded-xl border p-2.5 transition ${normalBox}`}
+      className={`relative flex items-start gap-3 overflow-hidden rounded-xl border p-2.5 transition ${normalBox}`}
     >
+      {l.cancelled && <CancelledTileOverlay />}
       <div className="w-12 shrink-0 text-center">
         <div className="text-lg font-bold leading-none">{l.st}.</div>
         <div className="vp-muted mt-1 text-[10px] leading-tight">
@@ -148,7 +198,7 @@ export function LessonRow({ l, settings }: { l: Lesson; settings?: Settings }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-base font-semibold">
-            <Subject l={l} style={subjectStyle} />
+            <Subject l={l} style={subjectStyle} settings={settings} />
           </span>
         </div>
         <div className="vp-muted mt-0.5 flex flex-wrap gap-x-3 text-sm">

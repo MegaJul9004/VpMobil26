@@ -28,14 +28,14 @@ export interface CustomTheme {
   accent: string;
 }
 
+/** Fächer-Stil (immer einfarbig ohne Verlauf) */
 export interface SubjectStyle {
   bgColor?: string;
-  bgGradientEnabled?: boolean;
-  bgGradientTo?: string;
   textColor?: string;
   fontFamily?: string;
 }
 
+/** UI-Farbüberschreibungen: Verlaufs-Option ausschließlich für den App-Hintergrund */
 export interface UiColorOverrides {
   enabled: boolean;
   primary: string;
@@ -47,8 +47,6 @@ export interface UiColorOverrides {
   bgGradientEnabled: boolean;
   bgGradientTo: string;
   surface: string;
-  surfaceGradientEnabled: boolean;
-  surfaceGradientTo: string;
 }
 
 export const DEFAULT_UI_COLORS: UiColorOverrides = {
@@ -62,8 +60,6 @@ export const DEFAULT_UI_COLORS: UiColorOverrides = {
   bgGradientEnabled: false,
   bgGradientTo: "#e0e7ff",
   surface: "#ffffff",
-  surfaceGradientEnabled: false,
-  surfaceGradientTo: "#f1f5f9",
 };
 
 export const SUBJECT_FONTS: { id: string; label: string; css: string }[] = [
@@ -75,6 +71,32 @@ export const SUBJECT_FONTS: { id: string; label: string; css: string }[] = [
   { id: "slab", label: "Slab / Kräftig", css: "'Rockwell', 'Courier New', Georgia, serif" },
   { id: "cursive", label: "Handschrift", css: "'Segoe Script', 'Comic Sans MS', cursive" },
 ];
+
+export const DEFAULT_SUBJECT_NAMES: Record<string, string> = {
+  DE: "Deutsch",
+  MA: "Mathematik",
+  EN: "Englisch",
+  BI: "Biologie",
+  PH: "Physik",
+  CH: "Chemie",
+  IF: "Informatik",
+  PO: "Politik-Wirtschaft",
+  EK: "Erdkunde",
+  GE: "Geschichte",
+  KU: "Kunst",
+  MU: "Musik",
+  SP: "Sport",
+  RE: "Religion",
+  WN: "Werte und Normen",
+  FR: "Französisch",
+  LA: "Latein",
+  SN: "Spanisch",
+  "NW+": "Naturwissenschaften+",
+  DS: "Darstellendes Spiel",
+  PL: "Philosophie",
+  PA: "Pädagogik",
+  SF: "Seminarfach",
+};
 
 export const DEFAULT_SUBJECTS: string[] = [
   "DE", "MA", "EN", "BI", "PH", "CH", "IF", "PO", "EK", "GE",
@@ -124,6 +146,20 @@ export const BUILTIN_THEMES: ThemePreset[] = [
     accent: "#fb923c",
   },
 ];
+
+/** Liefert den ausgeschriebenen Namen oder das Kürzel eines Fachs. */
+export function getSubjectDisplayName(
+  rawCode: string,
+  showFull = true,
+  customNames?: Record<string, string>
+): string {
+  const code = rawCode.trim();
+  if (!code || !showFull) return code;
+  const upper = code.toUpperCase();
+  const custom = customNames?.[upper]?.trim();
+  if (custom) return custom;
+  return DEFAULT_SUBJECT_NAMES[upper] ?? code;
+}
 
 /** Berechnet relative Helligkeit eines #RRGGBB-Farbwerts (0 = schwarz, 1 = weiß). */
 export function luminance(hex: string): number {
@@ -190,7 +226,7 @@ export function resolveSubjectFontCss(fontId: string | undefined): string {
   return SUBJECT_FONTS.find((f) => f.id === fontId)?.css ?? "inherit";
 }
 
-/** Wendet das aktive Theme, optionale UI-Farbüberschreibungen, Verläufe und Fächer-Schrift auf <html> an. */
+/** Wendet das aktive Theme, optionale UI-Farbüberschreibungen, Hintergrundverlauf und Fächer-Schrift auf <html> an. */
 export function applyThemeToDom(
   preset: ThemePreset,
   uiOverrides?: UiColorOverrides,
@@ -213,17 +249,13 @@ export function applyThemeToDom(
     useCustom && uiOverrides.bgGradientEnabled
       ? `linear-gradient(135deg, ${background}, ${uiOverrides.bgGradientTo})`
       : "none";
-  const surfaceImage =
-    useCustom && uiOverrides.surfaceGradientEnabled
-      ? `linear-gradient(135deg, ${surface}, ${uiOverrides.surfaceGradientTo})`
-      : "none";
 
   root.classList.toggle("dark", isDark);
   root.style.setProperty("--vp-primary", primary);
   root.style.setProperty("--vp-bg", background);
   root.style.setProperty("--vp-bg-image", bgImage);
   root.style.setProperty("--vp-surface", surface);
-  root.style.setProperty("--vp-surface-image", surfaceImage);
+  root.style.setProperty("--vp-surface-image", "none");
   root.style.setProperty("--vp-text", text);
   root.style.setProperty("--vp-muted", muted);
   root.style.setProperty("--vp-border", border);

@@ -5,7 +5,8 @@ import type { WeekResponse } from "@/app/api/week/route";
 import { formatDmy, parseYmd, weekdayShort } from "@/lib/plan/dates";
 import type { Lesson } from "@/lib/plan/types";
 import type { Settings } from "@/lib/settings";
-import { Room, Subject, Teacher, isChanged, normalBox, resolveLessonStyling } from "./ui";
+import { CancelledTileOverlay, Room, Subject, Teacher, isChanged, normalBox, resolveLessonStyling } from "./ui";
+import { getSubjectDisplayName } from "@/lib/themes";
 
 export const ZOOM_STORAGE_KEY = "vp:weekZoomPan";
 
@@ -486,11 +487,16 @@ function GridLessonCell({
   settings?: Settings;
 }) {
   const { cardStyle, subjectStyle } = resolveLessonStyling(l, settings);
+  const fullName = getSubjectDisplayName(
+    l.origFa || (l.fa && l.fa !== "---" ? l.fa : ""),
+    settings?.showFullSubjectNames !== false,
+    settings?.subjectFullNames
+  );
   const tooltipParts = [
     `${formatDmy(date)} · ${l.st}. Std (${l.beginn}–${l.ende})`,
     l.cancelled
-      ? `${l.origFa || "Unterricht"} entfällt`
-      : `Fach: ${l.fa || l.origFa}`,
+      ? `${fullName || "Unterricht"} entfällt`
+      : `Fach: ${getSubjectDisplayName(l.fa || l.origFa, settings?.showFullSubjectNames !== false, settings?.subjectFullNames)}`,
     l.le ? `Lehrkraft: ${l.le}${l.leChanged && l.origLe && l.origLe !== l.le ? ` (statt ${l.origLe})` : ""}` : "",
     l.ra ? `Raum: ${l.ra}` : "",
     l.info ? `Info: ${l.info}` : "",
@@ -500,11 +506,12 @@ function GridLessonCell({
     <div
       title={tooltipParts.join("\n")}
       style={cardStyle}
-      className={`flex h-full min-w-0 flex-1 flex-col justify-between rounded-lg border px-1 py-1 text-left leading-tight transition md:rounded-xl md:px-2 md:py-1.5 ${normalBox}`}
+      className={`relative flex h-full min-w-0 flex-1 flex-col justify-between overflow-hidden rounded-lg border px-1 py-1 text-left leading-tight transition md:rounded-xl md:px-2 md:py-1.5 ${normalBox}`}
     >
+      {l.cancelled && <CancelledTileOverlay />}
       <div className="flex flex-wrap items-center justify-between gap-0.5">
         <span className="truncate text-[10px] font-extrabold sm:text-xs md:text-sm">
-          <Subject l={l} style={subjectStyle} />
+          <Subject l={l} style={subjectStyle} settings={settings} />
         </span>
       </div>
 

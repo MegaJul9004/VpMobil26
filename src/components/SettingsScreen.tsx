@@ -23,6 +23,7 @@ import { usePush } from "@/lib/client/usePush";
 import {
   BUILTIN_THEMES,
   DEFAULT_SUBJECTS,
+  DEFAULT_SUBJECT_NAMES,
   DEFAULT_UI_COLORS,
   MAX_CUSTOM_THEMES,
   SUBJECT_FONTS,
@@ -130,7 +131,6 @@ export function SettingsScreen({
       const title = `🚨 Test-Push VpMobil26 (${targetClass})`;
       const body = "Push-Benachrichtigungen funktionieren einwandfrei!";
 
-      // 1) Falls Web-Push über Service Worker aktiv ist -> echten Server-Test-Push probieren
       if ("serviceWorker" in navigator && "PushManager" in window) {
         const reg = await navigator.serviceWorker.ready.catch(() => null);
         const sub = reg ? await reg.pushManager.getSubscription().catch(() => null) : null;
@@ -148,7 +148,6 @@ export function SettingsScreen({
         }
       }
 
-      // 2) Fallback: Direkte System-Benachrichtigung im Browser / Service Worker
       if ("Notification" in window) {
         let perm = Notification.permission;
         if (perm === "default") {
@@ -221,12 +220,6 @@ export function SettingsScreen({
     update((prev) => ({ uiColors: { ...prev.uiColors, ...patch } }));
   };
 
-  const patchAllSubjects = (patch: Partial<SubjectStyle>) => {
-    update((prev) => ({
-      allSubjectsStyle: { ...prev.allSubjectsStyle, ...patch },
-    }));
-  };
-
   const patchSingleSubject = (subj: string, patch: Partial<SubjectStyle>) => {
     const key = subj.trim().toUpperCase();
     update((prev) => ({
@@ -237,12 +230,24 @@ export function SettingsScreen({
     }));
   };
 
+  const setSubjectFullName = (subj: string, fullName: string) => {
+    const key = subj.trim().toUpperCase();
+    update((prev) => {
+      const next = { ...prev.subjectFullNames };
+      if (fullName.trim()) next[key] = fullName;
+      else delete next[key];
+      return { subjectFullNames: next };
+    });
+  };
+
   const resetSingleSubject = (subj: string) => {
     const key = subj.trim().toUpperCase();
     update((prev) => {
-      const next = { ...prev.subjectStyles };
-      delete next[key];
-      return { subjectStyles: next };
+      const nextStyles = { ...prev.subjectStyles };
+      delete nextStyles[key];
+      const nextNames = { ...prev.subjectFullNames };
+      delete nextNames[key];
+      return { subjectStyles: nextStyles, subjectFullNames: nextNames };
     });
   };
 
@@ -251,9 +256,10 @@ export function SettingsScreen({
       ...DEFAULT_SUBJECTS,
       ...availableSubjects,
       ...Object.keys(settings.subjectStyles),
+      ...Object.keys(settings.subjectFullNames),
     ]);
     return [...set].sort((a, b) => a.localeCompare(b, "de"));
-  }, [availableSubjects, settings.subjectStyles]);
+  }, [availableSubjects, settings.subjectStyles, settings.subjectFullNames]);
 
   const allPresets: ThemePreset[] = [
     ...BUILTIN_THEMES,
@@ -261,7 +267,6 @@ export function SettingsScreen({
   ];
 
   const ui = settings.uiColors;
-  const allSub = settings.allSubjectsStyle;
 
   return (
     <div className="flex min-h-dvh w-full flex-col">
@@ -449,7 +454,6 @@ export function SettingsScreen({
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3" role="radiogroup" aria-label="Farb-Presets">
-              {/* System-Modus (Auto) */}
               <div
                 className={`relative flex items-center justify-between rounded-xl border p-2.5 transition ${
                   settings.activeThemeId === "system" ? "ring-2" : ""
@@ -527,7 +531,6 @@ export function SettingsScreen({
               })}
             </div>
 
-            {/* Eigenes Theme-Preset erstellen */}
             <form onSubmit={handleCreatePreset} className="space-y-3 border-t pt-4" style={{ borderColor: "var(--vp-border)" }}>
               <h3 className="text-sm font-semibold">Eigenes Farb-Preset speichern</h3>
               <Field label="Preset-Name">
@@ -560,72 +563,52 @@ export function SettingsScreen({
             </form>
           </section>
 
-          {/* Vollständige Farbanpassung (Schrift, Hintergrund, Kachelfarben, Farbverläufe) */}
+          {/* Separate UI-Farben & Hintergrund-Verlauf */}
           <section className={`${card} space-y-4`} aria-labelledby="h-uicolors">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 id="h-uicolors" className="flex items-center gap-2 font-semibold">
-                  <Paintbrush size={18} /> Alle Farben &amp; Verläufe anpassen
+                  <Paintbrush size={18} /> UI-Elemente &amp; Hintergrund-Verlauf
                 </h2>
                 <p className="vp-muted mt-1 text-xs">
-                  Schrift, Hintergrund, Kachelfarben und fließende Farbverläufe frei festlegen.
+                  Separate Farben für UI-Elemente (Schrift, Kacheln, Buttons, Rahmen) sowie App-Hintergrund mit optionalem Farbverlauf.
                 </p>
               </div>
               <Toggle
                 checked={ui.enabled}
                 onChange={(v) => patchUiColors({ enabled: v })}
-                label="Eigene App-Farben aktivieren"
+                label="Separate UI-Farben aktivieren"
               />
             </div>
 
             {ui.enabled && (
               <div className="space-y-4 border-t pt-3" style={{ borderColor: "var(--vp-border)" }}>
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                  <ColorPick label="Schriftfarbe" value={ui.text} onChange={(v) => patchUiColors({ text: v })} />
+                  <ColorPick label="UI-Schriftfarbe" value={ui.text} onChange={(v) => patchUiColors({ text: v })} />
                   <ColorPick label="Nebenschrift" value={ui.muted} onChange={(v) => patchUiColors({ muted: v })} />
                   <ColorPick label="Primärfarbe" value={ui.primary} onChange={(v) => patchUiColors({ primary: v })} />
                   <ColorPick label="Änderungsfarbe" value={ui.accent} onChange={(v) => patchUiColors({ accent: v })} />
                   <ColorPick label="Rahmenfarbe" value={ui.border} onChange={(v) => patchUiColors({ border: v })} />
+                  <ColorPick label="UI-Kachelfarbe" value={ui.surface} onChange={(v) => patchUiColors({ surface: v })} />
                 </div>
 
-                {/* Hintergrund & Hintergrund-Verlauf */}
-                <div className="rounded-xl border p-3 space-y-2.5" style={{ borderColor: "var(--vp-border)" }}>
+                {/* App-Hintergrund mit Verlaufs-Option (nur für Hintergrund) */}
+                <div className="space-y-2.5 rounded-xl border p-3" style={{ borderColor: "var(--vp-border)" }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">App-Hintergrund &amp; Verlauf</span>
+                    <span className="text-xs font-bold">App-Hintergrund &amp; Farbverlauf</span>
                     <label className="flex items-center gap-2 text-xs">
                       <input
                         type="checkbox"
                         checked={ui.bgGradientEnabled}
                         onChange={(e) => patchUiColors({ bgGradientEnabled: e.target.checked })}
                       />
-                      <span>Farbverlauf</span>
+                      <span>Hintergrund-Verlauf aktiv</span>
                     </label>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <ColorPick label="Hintergrund Start" value={ui.background} onChange={(v) => patchUiColors({ background: v })} />
                     {ui.bgGradientEnabled && (
-                      <ColorPick label="Verlauf Ziel" value={ui.bgGradientTo} onChange={(v) => patchUiColors({ bgGradientTo: v })} />
-                    )}
-                  </div>
-                </div>
-
-                {/* Kachelfarben & Kachel-Verlauf */}
-                <div className="rounded-xl border p-3 space-y-2.5" style={{ borderColor: "var(--vp-border)" }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">Kachelfarbe &amp; Kachel-Verlauf</span>
-                    <label className="flex items-center gap-2 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={ui.surfaceGradientEnabled}
-                        onChange={(e) => patchUiColors({ surfaceGradientEnabled: e.target.checked })}
-                      />
-                      <span>Farbverlauf</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <ColorPick label="Kachel Start" value={ui.surface} onChange={(v) => patchUiColors({ surface: v })} />
-                    {ui.surfaceGradientEnabled && (
-                      <ColorPick label="Kachel Verlauf Ziel" value={ui.surfaceGradientTo} onChange={(v) => patchUiColors({ surfaceGradientTo: v })} />
+                      <ColorPick label="Hintergrund Verlauf Ziel" value={ui.bgGradientTo} onChange={(v) => patchUiColors({ bgGradientTo: v })} />
                     )}
                   </div>
                 </div>
@@ -635,213 +618,254 @@ export function SettingsScreen({
                   onClick={() => update({ uiColors: { ...DEFAULT_UI_COLORS } })}
                   className="vp-surface flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-xs font-semibold"
                 >
-                  <RotateCcw size={14} /> App-Farben zurücksetzen
+                  <RotateCcw size={14} /> UI-Farben zurücksetzen
                 </button>
               </div>
             )}
           </section>
 
-          {/* Fächer-Design: Separate Schriftart & Farben (für alle oder jedes Fach einzeln) */}
+          {/* Fächer-Darstellung: Ausgeschriebene Namen, Fächer-Schrift (alle/einzeln) & einfarbige Einzelfarben */}
           <section className={`${card} space-y-4 xl:col-span-2`} aria-labelledby="h-subjects">
-            <div>
-              <h2 id="h-subjects" className="flex items-center gap-2 font-semibold">
-                <BookOpen size={18} /> Fächer-Schrift &amp; Fächer-Farben
-              </h2>
-              <p className="vp-muted mt-1 text-sm">
-                Separate Schriftart für Fächer wählen und Farben entweder für alle Fächer oder für jedes Fach einzeln festlegen.
-              </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 id="h-subjects" className="flex items-center gap-2 font-semibold">
+                  <BookOpen size={18} /> Fächer: Namen, Schrift &amp; Einzelfarben
+                </h2>
+                <p className="vp-muted mt-1 text-sm">
+                  Fächer ausgeschrieben anzeigen, eigene Schrift für Fächer (alle gemeinsam oder einzeln) und einfarbige Kachelfarben pro Fach festlegen.
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="Separate Schriftart für Fächer">
-                {(id) => (
-                  <select
-                    id={id}
-                    value={settings.subjectFontFamily}
-                    onChange={(e) => update({ subjectFontFamily: e.target.value })}
-                    className={input}
-                  >
-                    {SUBJECT_FONTS.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
+            {/* Schalter: Fächer ausgeschrieben anzeigen */}
+            <div
+              className="flex items-center justify-between gap-4 rounded-xl border p-3"
+              style={{ borderColor: "var(--vp-border)" }}
+            >
+              <div>
+                <div className="text-sm font-semibold">Fächer ausgeschrieben anzeigen</div>
+                <p className="vp-muted text-xs">
+                  {settings.showFullSubjectNames
+                    ? "Aktiviert – z. B. „Mathematik“ statt „MA“"
+                    : "Deaktiviert – zeigt Fachkürzel wie „MA“"}
+                </p>
+              </div>
+              <Toggle
+                checked={settings.showFullSubjectNames}
+                onChange={(v) => update({ showFullSubjectNames: v })}
+                label="Fächer ausgeschrieben anzeigen"
+              />
+            </div>
 
+            {/* Fächer-Schrift Modus: alle gemeinsam vs. jedes Fach einzeln */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-1.5">
-                <span className="text-sm font-medium">Farbmodus für Fächer</span>
+                <span className="text-sm font-medium">Schrift für Fächer festlegen</span>
                 <div className="vp-surface grid grid-cols-2 gap-1 rounded-xl border p-1">
                   <button
                     type="button"
-                    onClick={() => update({ subjectColorMode: "all" })}
+                    onClick={() => update({ subjectFontMode: "all" })}
                     className={`h-9 rounded-lg text-xs font-bold transition ${
-                      settings.subjectColorMode === "all" ? "vp-btn-primary" : "vp-muted"
+                      settings.subjectFontMode === "all" ? "vp-btn-primary" : "vp-muted"
                     }`}
                   >
-                    Für alle Fächer
+                    Für alle Fächer gleichzeitig
                   </button>
                   <button
                     type="button"
-                    onClick={() => update({ subjectColorMode: "per-subject" })}
+                    onClick={() => update({ subjectFontMode: "per-subject" })}
                     className={`h-9 rounded-lg text-xs font-bold transition ${
-                      settings.subjectColorMode === "per-subject" ? "vp-btn-primary" : "vp-muted"
+                      settings.subjectFontMode === "per-subject" ? "vp-btn-primary" : "vp-muted"
                     }`}
                   >
                     Für jedes Fach einzeln
                   </button>
                 </div>
               </div>
+
+              {settings.subjectFontMode === "all" ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Gemeinsame Fächer-Schriftart">
+                    {(id) => (
+                      <select
+                        id={id}
+                        value={settings.subjectFontFamily}
+                        onChange={(e) => update({ subjectFontFamily: e.target.value })}
+                        className={input}
+                      >
+                        {SUBJECT_FONTS.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </Field>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <ColorPick
+                        label="Gemeinsame Fächer-Schriftfarbe"
+                        value={settings.allSubjectsTextColor || "#0f172a"}
+                        onChange={(v) => update({ allSubjectsTextColor: v })}
+                      />
+                    </div>
+                    {settings.allSubjectsTextColor && (
+                      <button
+                        type="button"
+                        onClick={() => update({ allSubjectsTextColor: "" })}
+                        title="Schriftfarbe zurücksetzen"
+                        className="vp-surface flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
+                      >
+                        <RotateCcw size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Field label="Standard-Schriftart (wenn nicht pro Fach überschrieben)">
+                  {(id) => (
+                    <select
+                      id={id}
+                      value={settings.subjectFontFamily}
+                      onChange={(e) => update({ subjectFontFamily: e.target.value })}
+                      className={input}
+                    >
+                      {SUBJECT_FONTS.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+              )}
             </div>
 
-            {settings.subjectColorMode === "all" ? (
-              <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: "var(--vp-border)" }}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold">Einheitliche Farben für alle Fächer</span>
-                  <button
-                    type="button"
-                    onClick={() => update({ allSubjectsStyle: {} })}
-                    className="vp-muted flex items-center gap-1 text-xs font-semibold hover:opacity-80"
-                  >
-                    <RotateCcw size={13} /> Zurücksetzen
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <ColorPick
-                    label="Fächer-Kachelfarbe"
-                    value={allSub.bgColor ?? "#ffffff"}
-                    onChange={(v) => patchAllSubjects({ bgColor: v })}
-                  />
-                  <ColorPick
-                    label="Verlauf Zielfarbe"
-                    value={allSub.bgGradientTo ?? "#e0e7ff"}
-                    onChange={(v) => patchAllSubjects({ bgGradientTo: v, bgGradientEnabled: true })}
-                  />
-                  <ColorPick
-                    label="Fächer-Schriftfarbe"
-                    value={allSub.textColor ?? "#0f172a"}
-                    onChange={(v) => patchAllSubjects({ textColor: v })}
-                  />
-                  <label className="flex items-center gap-2 self-end pb-2 text-xs font-medium">
-                    <input
-                      type="checkbox"
-                      checked={allSub.bgGradientEnabled === true}
-                      onChange={(e) => patchAllSubjects({ bgGradientEnabled: e.target.checked })}
-                    />
-                    <span>Verlauf aktiv</span>
-                  </label>
-                </div>
+            {/* Fächer-Liste: Farben immer einzeln pro Fach (immer einfarbig, kein Verlauf) */}
+            <div className="space-y-3 border-t pt-4" style={{ borderColor: "var(--vp-border)" }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold">
+                  Einzelfarben (einfarbig) &amp; Fachnamen pro Fach
+                </span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {/* Neues Fachkürzel hinzufügen */}
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const code = newSubjectCode.trim().toUpperCase();
-                    if (!code) return;
-                    patchSingleSubject(code, { bgColor: "#eef2ff", textColor: "#1e1b4b" });
-                    setNewSubjectCode("");
-                  }}
-                  className="flex gap-2"
-                >
-                  <input
-                    value={newSubjectCode}
-                    onChange={(e) => setNewSubjectCode(e.target.value)}
-                    placeholder="Weiteres Fachkürzel hinzufügen (z. B. SW, PGW, CH)…"
-                    className={input}
-                  />
-                  <button type="submit" className="vp-btn-primary h-11 shrink-0 rounded-xl px-4 text-xs font-bold">
-                    Hinzufügen
-                  </button>
-                </form>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                  {subjectList.map((subj) => {
-                    const st = settings.subjectStyles[subj] ?? {};
-                    const hasCustom = Object.keys(st).length > 0;
-                    return (
-                      <div
-                        key={subj}
-                        className="rounded-xl border p-3 space-y-2"
-                        style={{
-                          borderColor: hasCustom ? "var(--vp-primary)" : "var(--vp-border)",
-                          backgroundColor: st.bgColor,
-                          backgroundImage:
-                            st.bgColor && st.bgGradientEnabled && st.bgGradientTo
-                              ? `linear-gradient(135deg, ${st.bgColor}, ${st.bgGradientTo})`
-                              : undefined,
-                        }}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className="vp-subject-font text-base font-extrabold"
-                            style={st.textColor ? { color: st.textColor } : undefined}
-                          >
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const code = newSubjectCode.trim().toUpperCase();
+                  if (!code) return;
+                  patchSingleSubject(code, { bgColor: "#eef2ff" });
+                  setNewSubjectCode("");
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  value={newSubjectCode}
+                  onChange={(e) => setNewSubjectCode(e.target.value)}
+                  placeholder="Weiteres Fachkürzel hinzufügen (z. B. SW, PGW, CH)…"
+                  className={input}
+                />
+                <button type="submit" className="vp-btn-primary h-11 shrink-0 rounded-xl px-4 text-xs font-bold">
+                  Hinzufügen
+                </button>
+              </form>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {subjectList.map((subj) => {
+                  const st = settings.subjectStyles[subj] ?? {};
+                  const customName = settings.subjectFullNames[subj] ?? "";
+                  const defaultName = DEFAULT_SUBJECT_NAMES[subj] ?? subj;
+                  const hasCustom = Object.keys(st).length > 0 || !!customName;
+
+                  return (
+                    <div
+                      key={subj}
+                      className="space-y-2.5 rounded-xl border p-3"
+                      style={{
+                        borderColor: hasCustom ? "var(--vp-primary)" : "var(--vp-border)",
+                        backgroundColor: st.bgColor,
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="vp-surface rounded-md border px-1.5 py-0.5 font-mono text-xs font-bold">
                             {subj}
                           </span>
-                          {hasCustom && (
-                            <button
-                              type="button"
-                              onClick={() => resetSingleSubject(subj)}
-                              aria-label={`${subj} zurücksetzen`}
-                              className="vp-surface flex h-7 items-center gap-1 rounded-lg border px-2 text-[11px] font-semibold"
-                            >
-                              <RotateCcw size={11} /> Reset
-                            </button>
-                          )}
+                          <span
+                            className="vp-subject-font truncate text-sm font-extrabold"
+                            style={
+                              settings.subjectFontMode === "per-subject" && st.textColor
+                                ? { color: st.textColor }
+                                : settings.allSubjectsTextColor
+                                ? { color: settings.allSubjectsTextColor }
+                                : undefined
+                            }
+                          >
+                            {customName || defaultName}
+                          </span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
+                        {hasCustom && (
+                          <button
+                            type="button"
+                            onClick={() => resetSingleSubject(subj)}
+                            aria-label={`${subj} zurücksetzen`}
+                            className="vp-surface flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[11px] font-semibold"
+                          >
+                            <RotateCcw size={11} /> Reset
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Ausgeschriebener Name editierbar */}
+                      <input
+                        value={customName}
+                        onChange={(e) => setSubjectFullName(subj, e.target.value)}
+                        placeholder={`Ausgeschrieben (Standard: ${defaultName})`}
+                        aria-label={`Ausgeschriebener Name für ${subj}`}
+                        className="vp-surface h-8 w-full rounded-lg border px-2.5 text-xs outline-none"
+                      />
+
+                      {/* Einfarbige Kachelfarbe pro Fach (kein Verlauf) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <ColorPick
+                          label="Kachelfarbe (einfarbig)"
+                          value={st.bgColor ?? "#ffffff"}
+                          onChange={(v) => patchSingleSubject(subj, { bgColor: v })}
+                        />
+                        {settings.subjectFontMode === "per-subject" && (
                           <ColorPick
-                            label="Kachel"
-                            value={st.bgColor ?? "#ffffff"}
-                            onChange={(v) => patchSingleSubject(subj, { bgColor: v })}
-                          />
-                          <ColorPick
-                            label="Verlauf"
-                            value={st.bgGradientTo ?? "#e0e7ff"}
-                            onChange={(v) => patchSingleSubject(subj, { bgGradientTo: v, bgGradientEnabled: true })}
-                          />
-                          <ColorPick
-                            label="Schrift"
+                            label="Schriftfarbe"
                             value={st.textColor ?? "#0f172a"}
                             onChange={(v) => patchSingleSubject(subj, { textColor: v })}
                           />
-                        </div>
-                        <div className="flex items-center justify-between gap-2 pt-1">
-                          <label className="vp-surface flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[11px]">
-                            <input
-                              type="checkbox"
-                              checked={st.bgGradientEnabled === true}
-                              onChange={(e) => patchSingleSubject(subj, { bgGradientEnabled: e.target.checked })}
-                            />
-                            <span>Verlauf</span>
-                          </label>
-                          <select
-                            value={st.fontFamily ?? ""}
-                            onChange={(e) =>
-                              patchSingleSubject(subj, {
-                                fontFamily: e.target.value || undefined,
-                              })
-                            }
-                            aria-label={`Schriftart für ${subj}`}
-                            className="vp-surface h-8 flex-1 rounded-lg border px-2 text-xs"
-                          >
-                            <option value="">Schrift: Global</option>
-                            {SUBJECT_FONTS.map((f) => (
-                              <option key={f.id} value={f.id}>
-                                {f.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+
+                      {/* Wenn Schrift pro Fach einzeln gewählt wird -> Schriftart-Auswahl */}
+                      {settings.subjectFontMode === "per-subject" && (
+                        <select
+                          value={st.fontFamily ?? ""}
+                          onChange={(e) =>
+                            patchSingleSubject(subj, {
+                              fontFamily: e.target.value || undefined,
+                            })
+                          }
+                          aria-label={`Schriftart für ${subj}`}
+                          className="vp-surface h-8 w-full rounded-lg border px-2 text-xs"
+                        >
+                          <option value="">Schrift: Global ({SUBJECT_FONTS.find((f) => f.id === settings.subjectFontFamily)?.label ?? "Standard"})</option>
+                          {SUBJECT_FONTS.map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </section>
         </div>
 
