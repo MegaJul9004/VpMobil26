@@ -1,10 +1,11 @@
 "use client";
-import { Minus, Plus, RotateCcw, Share2, X } from "lucide-react";
+import { Share2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { WeekResponse } from "@/app/api/week/route";
 import { formatDmy, parseYmd, weekdayShort } from "@/lib/plan/dates";
 import type { Lesson } from "@/lib/plan/types";
-import { Room, Subject, Teacher, WarnBadge, changedBox, isChanged, normalBox } from "./ui";
+import type { Settings } from "@/lib/settings";
+import { Room, Subject, Teacher, isChanged, normalBox, resolveLessonStyling } from "./ui";
 
 export const ZOOM_STORAGE_KEY = "vp:weekZoomPan";
 
@@ -33,7 +34,7 @@ const clampScale = (s: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, Number
 
 /**
  * Begrenzt die Verschiebung (x, y) so, dass der Plan niemals kleiner als das Display wird
- * und seine Ecken bündig mit den Ecken des Viewports abschließen (bei 100% exakt x=0, y=0).
+ * und beim Scrollen/Zoomen exakt innerhalb der Plan-Grenzen bleibt (Ecken bündig).
  */
 export function clampZoomPan(
   rawScale: number,
@@ -45,17 +46,14 @@ export function clampZoomPan(
   planeH = viewportH
 ): ZoomPanState {
   const scale = clampScale(rawScale);
-  if (scale <= 1.001) {
-    return { scale: 1, x: 0, y: 0 };
-  }
   const scaledW = planeW * scale;
   const scaledH = planeH * scale;
-  const minX = viewportW > 0 ? Math.min(0, viewportW - scaledW) : -Infinity;
-  const minY = viewportH > 0 ? Math.min(0, viewportH - scaledH) : -Infinity;
+  const minX = viewportW > 0 ? Math.min(0, viewportW - scaledW) : rawScale <= 1.001 ? 0 : -Infinity;
+  const minY = viewportH > 0 ? Math.min(0, viewportH - scaledH) : rawScale <= 1.001 ? 0 : -Infinity;
   const x = Math.min(0, Math.max(minX, rawX));
   const y = Math.min(0, Math.max(minY, rawY));
   return {
-    scale,
+    scale: scale <= 1.001 ? 1 : scale,
     x: Object.is(x, -0) ? 0 : Math.round(x * 10) / 10,
     y: Object.is(y, -0) ? 0 : Math.round(y * 10) / 10,
   };
@@ -82,6 +80,7 @@ export function WeekCanvas({
   days,
   visibleLessons,
   rememberZoomPosition,
+  settings,
   shareMenuDate,
   onOpenShare,
   onCloseShare,
@@ -91,6 +90,7 @@ export function WeekCanvas({
   days: WeekResponse["days"];
   visibleLessons: (lessons: Lesson[]) => Lesson[];
   rememberZoomPosition: boolean;
+  settings?: Settings;
   shareMenuDate: string | null;
   onOpenShare: (date: string) => void;
   onCloseShare: () => void;
@@ -153,50 +153,35 @@ export function WeekCanvas({
     [perDayLessons]
   );
 
-  // Zoom um einen Punkt (cx, cy relativ zum Viewport)
-  const zoomAt = useCallback(
-    (nextScaleRaw: number, cx?: number, cy?: number) => {
-      setZp((prev) => {
-        const nextScale = clampScale(nextScaleRaw);
-        const rect = viewportRef.current?.getBoundingClientRect();
-        const px = cx ?? (rect ? rect.width / 2 : 0);
-        const py = cy ?? (rect ? rect.height / 2 : 0);
-        const ratio = nextScale / prev.scale;
-        const nx = px - (px - prev.x) * ratio;
-        const ny = py - (py - prev.y) * ratio;
-        return clampWithDom(nextScale, nx, ny);
-      });
-    },
-    [clampWithDom]
-  );
-
-  const handleReset = useCallback(() => {
-    setZp({ scale: 1, x: 0, y: 0 });
-  }, []);
-
-  // Desktop: Mausrad-Zoom (Wheel) auf dem Canvas
+  // Desktop: Mausrad scrollt vertikal/horizontal; Strg/Pinch-Mausrad zoomt zum Cursor
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const rect = el.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      const delta = -e.deltaY * 0.0015;
-      setZp((prev) => {
-        const nextScale = clampScale(prev.scale * (1 + delta));
-        const ratio = nextScale / prev.scale;
-        const nx = cx - (cx - prev.x) * ratio;
-        const ny = cy - (cy - prev.y) * ratio;
-        return clampWithDom(nextScale, nx, ny);
-      });
+      if (e.ctrlKey || e.metaKey) {
+        const rect = el.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const delta = -e.deltaY * 0.002;
+        setZp((prev) => {
+          const nextScale = clampScale(prev.scale * (1 + delta));
+          const ratio = nextScale / prev.scale;
+          const nx = cx - (cx - prev.x) * ratio;
+          const ny = cy - (cy - prev.y) * ratio;
+          return clampWithDom(nextScale, nx, ny);
+        });
+      } else {
+        const dx = -(e.deltaX || (e.shiftKey ? e.deltaY : 0));
+        const dy = e.shiftKey && !e.deltaX ? 0 : -e.deltaY;
+        setZp((prev) => clampWithDom(prev.scale, prev.x + dx, prev.y + dy));
+      }
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, [clampWithDom]);
 
-  // Multi-Pointer Tracking für Touch (Pinch-to-Zoom + Pan) und Maus (Drag-to-Pan)
+  // Multi-Pointer Tracking: 1 Finger / Maus-Drag = Scrollen/Panning, 2 Finger = Pinch-to-Zoom
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const lastPan = useRef<{ x: number; y: number } | null>(null);
   const lastPinchDist = useRef<number | null>(null);
@@ -228,7 +213,6 @@ export function WeekCanvas({
       lastPinchDist.current = null;
       setDragging(true);
 
-      // Ermittle, ob auf eine Tagesspalte getippt/gehalten wurde (für Long-Press Share)
       const dayEl = (e.target as HTMLElement).closest("[data-day-col]") as HTMLElement | null;
       const date = dayEl?.getAttribute("data-day-col") ?? null;
       downOrigin.current = { x: e.clientX, y: e.clientY, date };
@@ -250,7 +234,6 @@ export function WeekCanvas({
     if (!pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // Prüfe Bewegung für Long-Press-Abbruch
     if (
       Math.hypot(e.clientX - downOrigin.current.x, e.clientY - downOrigin.current.y) > 10
     ) {
@@ -313,10 +296,9 @@ export function WeekCanvas({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUpOrCancel}
       onPointerCancel={handlePointerUpOrCancel}
-      className={`vp-surface relative flex-1 overflow-hidden rounded-2xl border shadow-sm touch-none select-none ${
+      className={`vp-surface relative h-[calc(100dvh-13.5rem)] w-full overflow-hidden rounded-2xl border shadow-sm touch-none select-none ${
         dragging ? "cursor-grabbing" : "cursor-grab"
       }`}
-      style={{ minHeight: "calc(100dvh - 13.5rem)" }}
     >
       {/* Transformiertes Wochenraster-Canvas */}
       <div
@@ -417,56 +399,12 @@ export function WeekCanvas({
                 ende={t.ende}
                 days={days}
                 cells={perDayLessons.map((ls) => ls.filter((l) => l.st === st))}
+                settings={settings}
                 onOpenShare={onOpenShare}
               />
             );
           })}
         </div>
-      </div>
-
-      {/* Floating-Buttons am unteren rechten Bildschirmrand: [ + ], [ − ], [ ⟲ Reset ] */}
-      <div
-        onPointerDown={(e) => e.stopPropagation()}
-        className="vp-surface absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-2xl border p-1.5 shadow-lg backdrop-blur"
-        aria-label="Zoom- und Positionssteuerung"
-      >
-        <button
-          type="button"
-          onClick={() => zoomAt(zp.scale - 0.2)}
-          disabled={zp.scale <= MIN_SCALE}
-          aria-label="Verkleinern (−)"
-          title="Verkleinern (−)"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border transition hover:opacity-80 disabled:opacity-35"
-          style={{ borderColor: "var(--vp-border)" }}
-        >
-          <Minus size={16} />
-        </button>
-        <span
-          data-testid="zoom-percentage"
-          className="min-w-[3.2rem] text-center font-mono text-xs font-bold"
-        >
-          {Math.round(zp.scale * 100)}%
-        </span>
-        <button
-          type="button"
-          onClick={() => zoomAt(zp.scale + 0.2)}
-          aria-label="Vergrößern (+)"
-          title="Vergrößern (+)"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border transition hover:opacity-80"
-          style={{ borderColor: "var(--vp-border)" }}
-        >
-          <Plus size={16} />
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          aria-label="Reset (100% Fit)"
-          title="Ansicht zurücksetzen (⟲ Reset)"
-          className="vp-btn-primary ml-0.5 flex h-9 items-center gap-1 rounded-xl px-2.5 text-xs font-bold shadow-sm transition hover:opacity-95"
-        >
-          <RotateCcw size={14} />
-          <span className="hidden sm:inline">Reset</span>
-        </button>
       </div>
     </div>
   );
@@ -478,6 +416,7 @@ function PeriodRow({
   ende,
   days,
   cells,
+  settings,
   onOpenShare,
 }: {
   st: number;
@@ -485,6 +424,7 @@ function PeriodRow({
   ende: string;
   days: WeekResponse["days"];
   cells: Lesson[][];
+  settings?: Settings;
   onOpenShare: (date: string) => void;
 }) {
   return (
@@ -525,7 +465,7 @@ function PeriodRow({
             {ls.length > 0 && (
               <div className="flex h-full flex-col gap-1">
                 {ls.map((l, k) => (
-                  <GridLessonCell key={`${l.nr}-${k}`} l={l} date={day.date} />
+                  <GridLessonCell key={`${l.nr}-${k}`} l={l} date={day.date} settings={settings} />
                 ))}
               </div>
             )}
@@ -536,8 +476,16 @@ function PeriodRow({
   );
 }
 
-function GridLessonCell({ l, date }: { l: Lesson; date: string }) {
-  const ch = isChanged(l);
+function GridLessonCell({
+  l,
+  date,
+  settings,
+}: {
+  l: Lesson;
+  date: string;
+  settings?: Settings;
+}) {
+  const { cardStyle, subjectStyle } = resolveLessonStyling(l, settings);
   const tooltipParts = [
     `${formatDmy(date)} · ${l.st}. Std (${l.beginn}–${l.ende})`,
     l.cancelled
@@ -551,19 +499,13 @@ function GridLessonCell({ l, date }: { l: Lesson; date: string }) {
   return (
     <div
       title={tooltipParts.join("\n")}
-      className={`flex h-full min-w-0 flex-1 flex-col justify-between rounded-lg border px-1 py-1 text-left leading-tight transition md:rounded-xl md:px-2 md:py-1.5 ${
-        ch ? changedBox : normalBox
-      }`}
+      style={cardStyle}
+      className={`flex h-full min-w-0 flex-1 flex-col justify-between rounded-lg border px-1 py-1 text-left leading-tight transition md:rounded-xl md:px-2 md:py-1.5 ${normalBox}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-0.5">
         <span className="truncate text-[10px] font-extrabold sm:text-xs md:text-sm">
-          <Subject l={l} />
+          <Subject l={l} style={subjectStyle} />
         </span>
-        {ch && (
-          <span className="hidden lg:inline-flex">
-            <WarnBadge cancelled={l.cancelled} />
-          </span>
-        )}
       </div>
 
       <div className="vp-muted mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[9px] sm:text-[10px] md:text-xs">

@@ -9,6 +9,14 @@ const nextConfig = {
         { key: "Service-Worker-Allowed", value: "/" },
       ],
     },
+    {
+      source: "/",
+      headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+    },
+    {
+      source: "/api/:path*",
+      headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+    },
   ],
 };
 export default nextConfig;

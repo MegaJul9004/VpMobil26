@@ -105,7 +105,9 @@ describe("Share-Formatierung (Phase 4)", () => {
 });
 
 describe("Theme-Engine (Phase 5)", () => {
-  it("löst Hell, Dunkel und eigene Farb-Presets auf", () => {
+  it("löst System, Hell, Dunkel und eigene Farb-Presets auf", () => {
+    expect(resolveTheme("system", [], false).name).toBe("Hell");
+    expect(resolveTheme("system", [], true).isDark).toBe(true);
     expect(resolveTheme("light", []).name).toBe("Hell");
     expect(resolveTheme("dark", []).isDark).toBe(true);
     const custom = { id: "my1", name: "Neon", primary: "#00ff88", background: "#050510", accent: "#ff0055" };
@@ -113,12 +115,37 @@ describe("Theme-Engine (Phase 5)", () => {
     expect(built.isDark).toBe(true);
     expect(resolveTheme("my1", [custom]).name).toBe("Neon");
   });
+
+  it("bereinigt uiColors, Fächer-Schrift und Fächer-Farben sauber", () => {
+    const s = sanitizeSettings({
+      activeThemeId: "system",
+      subjectFontFamily: "serif",
+      subjectColorMode: "per-subject",
+      allSubjectsStyle: { bgColor: "#112233", bgGradientEnabled: true, bgGradientTo: "#445566" },
+      subjectStyles: {
+        ma: { bgColor: "#ff0000", textColor: "#ffffff" },
+      },
+      uiColors: { enabled: true, bgGradientEnabled: true, bgGradientTo: "#123456" },
+    });
+    expect(s.activeThemeId).toBe("system");
+    expect(s.subjectFontFamily).toBe("serif");
+    expect(s.subjectColorMode).toBe("per-subject");
+    expect(s.allSubjectsStyle.bgColor).toBe("#112233");
+    expect(s.subjectStyles.MA).toEqual({ bgColor: "#ff0000", textColor: "#ffffff" });
+    expect(s.uiColors.enabled).toBe(true);
+    expect(s.uiColors.bgGradientTo).toBe("#123456");
+  });
 });
 
-describe("Wochenplan Zoom & Eck-Begrenzung (WeekCanvas)", () => {
+describe("Wochenplan Zoom, Scroll & Eck-Begrenzung (WeekCanvas)", () => {
   it("lässt nicht weiter als 100% herauszoomen und setzt die Ansicht auf die Plan-Ecke (0, 0) zurück", () => {
     expect(clampZoomPan(0.7, -150, -200, 400, 600, 400, 600)).toEqual({ scale: 1, x: 0, y: 0 });
     expect(clampZoomPan(1.0, 50, -80, 400, 600, 400, 600)).toEqual({ scale: 1, x: 0, y: 0 });
+  });
+
+  it("erlaubt vertikales Scrollen bei 100% wenn der Stundenplan höher als der Viewport ist", () => {
+    expect(clampZoomPan(1.0, 20, -180, 400, 600, 400, 900)).toEqual({ scale: 1, x: 0, y: -180 });
+    expect(clampZoomPan(1.0, 0, -500, 400, 600, 400, 900)).toEqual({ scale: 1, x: 0, y: -300 });
   });
 
   it("begrenzt das Verschieben beim Hineinzoomen exakt an den Ecken des Vertretungsplans", () => {

@@ -46,6 +46,7 @@ export function PlanScreen({
   update,
   onBack,
   onClassesLoaded,
+  onSubjectsLoaded,
   mode,
   onModeChange,
 }: {
@@ -54,6 +55,7 @@ export function PlanScreen({
   update: (p: Partial<Settings> | ((prev: Settings) => Partial<Settings>)) => void;
   onBack: () => void;
   onClassesLoaded?: (classes: string[]) => void;
+  onSubjectsLoaded?: (subjects: string[]) => void;
   mode: PlanViewMode;
   onModeChange: (m: PlanViewMode) => void;
 }) {
@@ -63,7 +65,7 @@ export function PlanScreen({
   const [week, setWeek] = useState<WeekResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [reloadTick, setReloadTick] = useState(0);
+  const [reloadTick, setReloadTick] = useState(1);
   const [coursesOpen, setCoursesOpen] = useState(false);
 
   // Phase 4: Long-Press Kontextmenü-Status (welcher Tag zeigt das "Teilen"-Popup?)
@@ -109,6 +111,19 @@ export function PlanScreen({
         if (data.classes?.length && onClassesLoaded) {
           onClassesLoaded(data.classes);
         }
+        if (onSubjectsLoaded) {
+          const subs = new Set<string>();
+          data.courses?.forEach((c) => {
+            if (c.fach) subs.add(c.fach.trim().toUpperCase());
+          });
+          data.days?.forEach((d) =>
+            d.lessons?.forEach((l) => {
+              const f = (l.origFa || (l.fa !== "---" ? l.fa : "")).trim().toUpperCase();
+              if (f) subs.add(f);
+            })
+          );
+          if (subs.size > 0) onSubjectsLoaded([...subs].sort());
+        }
       })
       .catch((e) => {
         if (e.name !== "AbortError") setError((e as Error).message);
@@ -117,7 +132,7 @@ export function PlanScreen({
         if (!ac.signal.aborted) setLoading(false);
       });
     return () => ac.abort();
-  }, [monday, className, reloadTick, settings.schoolNumber, settings.username, settings.password, onClassesLoaded]);
+  }, [monday, className, reloadTick, settings.schoolNumber, settings.username, settings.password, onClassesLoaded, onSubjectsLoaded]);
 
   const hidden = useMemo(
     () => settings.hiddenCourses[className] ?? [],
@@ -340,11 +355,12 @@ export function PlanScreen({
         )}
 
         {mode === "week" ? (
-          /* 2. & 3. Strenges 5-Tage-Wochenraster im interaktiven Zoom-/Pan-Canvas */
+          /* 2. & 3. Strenges 5-Tage-Wochenraster im interaktiven Scroll-/Zoom-Canvas */
           <WeekCanvas
             days={daysToRender}
             visibleLessons={visibleLessons}
             rememberZoomPosition={settings.rememberWeekZoomPosition}
+            settings={settings}
             shareMenuDate={shareMenuDate}
             onOpenShare={(date) => setShareMenuDate(date)}
             onCloseShare={() => setShareMenuDate(null)}
@@ -402,6 +418,7 @@ export function PlanScreen({
               <DayCard
                 day={activeDayObj}
                 lessons={visibleLessons(activeDayObj.lessons)}
+                settings={settings}
                 shareOpen={shareMenuDate === activeDayObj.date}
                 onOpenShare={() => setShareMenuDate(activeDayObj.date)}
                 onCloseShare={() => setShareMenuDate(null)}
@@ -549,6 +566,7 @@ export function PlanScreen({
 function DayCard({
   day,
   lessons,
+  settings,
   shareOpen,
   onOpenShare,
   onCloseShare,
@@ -556,6 +574,7 @@ function DayCard({
 }: {
   day: WeekResponse["days"][number];
   lessons: Lesson[];
+  settings?: Settings;
   shareOpen: boolean;
   onOpenShare: () => void;
   onCloseShare: () => void;
@@ -684,7 +703,7 @@ function DayCard({
       ) : (
         <div className="space-y-2">
           {lessons.map((l, idx) => (
-            <LessonRow key={`${l.st}-${l.nr}-${idx}`} l={l} />
+            <LessonRow key={`${l.st}-${l.nr}-${idx}`} l={l} settings={settings} />
           ))}
         </div>
       )}

@@ -2,10 +2,13 @@
 import { CalendarDays, Home, Settings as SettingsIcon, Star } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "@/lib/client/useSettings";
+import { DEFAULT_SUBJECTS } from "@/lib/themes";
 import { HomeScreen } from "./HomeScreen";
 import { LockScreen } from "./LockScreen";
 import { PlanScreen, type PlanViewMode } from "./PlanScreen";
 import { SettingsScreen } from "./SettingsScreen";
+
+const UNLOCKED_KEY = "vp:unlocked";
 
 type ViewState =
   | { screen: "home" }
@@ -13,7 +16,7 @@ type ViewState =
   | { screen: "plan"; className: string };
 
 /**
- * Adaptiver App-Rahmen (Anforderung 4):
+ * Adaptiver App-Rahmen:
  * - Mobile (< 768px): Fixierte untere Navigationsleiste (Bottom Bar), Standard-Modus = Tagesplan.
  * - Desktop & iPad (>= 768px): Aufgeräumte linke Sidebar + Vollbreiten-Hauptbereich, Standard-Modus = Wochenplan.
  */
@@ -24,21 +27,36 @@ export default function Shell() {
   const [view, setView] = useState<ViewState>({ screen: "home" });
   const [lastClass, setLastClass] = useState<string>("");
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
-
-  // Prüfe beim Start, ob bereits ein gültiges Auth-Cookie vorliegt
-  useEffect(() => {
-    fetch("/api/auth")
-      .then((r) => (r.ok ? r.json() : { authenticated: false }))
-      .then((d) => {
-        if (d?.authenticated) setUnlocked(true);
-      })
-      .catch(() => {})
-      .finally(() => setAuthChecked(true));
-  }, []);
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>(DEFAULT_SUBJECTS);
 
   // Ansichtsmodus (Tagesplan vs. Wochenplan): Standard Mobile = "day", Desktop/iPad (>= 768px) = "week"
   const [userPickedMode, setUserPickedMode] = useState<PlanViewMode | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
+
+  // Prüfe beim Start: localStorage-Freischaltung (überlebt Reload & Server-Updates) + Server-Cookie-Backup
+  useEffect(() => {
+    let localUnlocked = false;
+    try {
+      localUnlocked = localStorage.getItem(UNLOCKED_KEY) === "true";
+    } catch {}
+    if (localUnlocked) {
+      setUnlocked(true);
+      setAuthChecked(true);
+      return;
+    }
+    fetch("/api/auth")
+      .then((r) => (r.ok ? r.json() : { authenticated: false }))
+      .then((d) => {
+        if (d?.authenticated) {
+          setUnlocked(true);
+          try {
+            localStorage.setItem(UNLOCKED_KEY, "true");
+          } catch {}
+        }
+      })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -50,7 +68,14 @@ export default function Shell() {
 
   const planMode: PlanViewMode = userPickedMode ?? (isDesktop ? "week" : "day");
 
-  // Lade verfügbare Klassen im Hintergrund für die Favoriten-Auswahl (erst nach Entsperrung)
+  const mergeSubjects = useCallback((incoming: string[]) => {
+    setAvailableSubjects((prev) => {
+      const merged = new Set([...prev, ...incoming.map((s) => s.trim().toUpperCase()).filter(Boolean)]);
+      return [...merged].sort((a, b) => a.localeCompare(b, "de"));
+    });
+  }, []);
+
+  // Lade verfügbare Klassen & Fächer im Hintergrund nach Entsperrung
   useEffect(() => {
     if (!ready || !unlocked) return;
     const headers: Record<string, string> = {};
@@ -61,9 +86,16 @@ export default function Shell() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (j?.classes?.length) setAvailableClasses(j.classes);
+        if (j?.courses?.length) {
+          mergeSubjects(
+            (j.courses as { fach?: string }[])
+              .map((c) => c.fach ?? "")
+              .filter(Boolean)
+          );
+        }
       })
       .catch(() => {});
-  }, [ready, unlocked, settings.schoolNumber, settings.username, settings.password]);
+  }, [ready, unlocked, settings.schoolNumber, settings.username, settings.password, mergeSubjects]);
 
   // Browser-History-Synchronisation
   useEffect(() => {
@@ -100,7 +132,16 @@ export default function Shell() {
   if (!ready || !authChecked) return <div className="min-h-dvh" aria-busy="true" />;
 
   if (!unlocked) {
-    return <LockScreen onUnlocked={() => setUnlocked(true)} />;
+    return (
+      <LockScreen
+        onUnlocked={() => {
+          try {
+            localStorage.setItem(UNLOCKED_KEY, "true");
+          } catch {}
+          setUnlocked(true);
+        }}
+      />
+    );
   }
 
   return (
@@ -109,7 +150,7 @@ export default function Shell() {
       <aside
         data-testid="desktop-sidebar"
         aria-label="Desktop-Navigation"
-        className="vp-surface hidden w-60 shrink-0 flex-col justify-between border-r p-4 md:flex"
+        className="vp-surface hidden w-60 shrink-0 flex-col border-r p-4 md:flex"
       >
         <div className="space-y-6">
           <button
@@ -190,8 +231,6 @@ export default function Shell() {
             </div>
           )}
         </div>
-
-        <p className="vp-muted text-[11px]">VpMobil26 PWA</p>
       </aside>
 
       {/* Hauptinhalt */}
@@ -200,6 +239,8 @@ export default function Shell() {
           <SettingsScreen
             settings={settings}
             update={update}
+            availableSubjects={availableSubjects}
+            activeClass={activePlanClass}
             onBack={() => navigate({ screen: "home" })}
           />
         )}
@@ -211,6 +252,7 @@ export default function Shell() {
             update={update}
             onBack={() => navigate({ screen: "home" })}
             onClassesLoaded={setAvailableClasses}
+            onSubjectsLoaded={mergeSubjects}
             mode={planMode}
             onModeChange={setUserPickedMode}
           />

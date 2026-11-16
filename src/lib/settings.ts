@@ -1,5 +1,13 @@
 /** Benutzereinstellungen & Favoriten (lokal gespeichert) */
-import { MAX_CUSTOM_THEMES, type CustomTheme } from "./themes";
+import {
+  DEFAULT_UI_COLORS,
+  MAX_CUSTOM_THEMES,
+  type CustomTheme,
+  type SubjectStyle,
+  type UiColorOverrides,
+} from "./themes";
+
+export type SubjectColorMode = "all" | "per-subject";
 
 export interface Settings {
   schoolNumber: string;
@@ -12,12 +20,22 @@ export interface Settings {
   favoriteSlots: string[];
   /** Ausgeblendete Kurse pro Klasse */
   hiddenCourses: Record<string, string[]>;
-  /** Aktives Theme-Preset ("light", "dark", oder ID eines eigenen Themes) */
+  /** Aktives Theme-Preset ("system", "light", "dark", "ocean" oder ID eines eigenen Themes) */
   activeThemeId: string;
   /** Eigene benutzerdefinierte Farb-Presets */
   customThemes: CustomTheme[];
   /** Zoom- und Position im Wochenplan merken (Standard: true) */
   rememberWeekZoomPosition: boolean;
+  /** Vollständige Anpassung der App-Farben & Farbverläufe */
+  uiColors: UiColorOverrides;
+  /** Separate Schriftart für Fächer */
+  subjectFontFamily: string;
+  /** Fächerfarben für alle gemeinsam ("all") oder pro Fach einzeln ("per-subject") */
+  subjectColorMode: SubjectColorMode;
+  /** Gemeinsamer Stil für alle Fächer (bei Modus "all") */
+  allSubjectsStyle: SubjectStyle;
+  /** Individuelle Stile pro Fachkürzel (bei Modus "per-subject") */
+  subjectStyles: Record<string, SubjectStyle>;
 }
 
 export const MIN_FAVORITES = 1;
@@ -35,9 +53,14 @@ export const DEFAULT_SETTINGS: Settings = {
   favoriteCount: DEFAULT_FAVORITES,
   favoriteSlots: EMPTY_SLOTS(),
   hiddenCourses: {},
-  activeThemeId: "light",
+  activeThemeId: "system",
   customThemes: [],
   rememberWeekZoomPosition: true,
+  uiColors: { ...DEFAULT_UI_COLORS },
+  subjectFontFamily: "inherit",
+  subjectColorMode: "all",
+  allSubjectsStyle: {},
+  subjectStyles: {},
 };
 
 export const clampFavorites = (n: unknown): number => {
@@ -68,6 +91,11 @@ function sanitizeHidden(raw: unknown): Record<string, string[]> {
 }
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+const hexOr = (v: unknown, fallback: string) =>
+  typeof v === "string" && HEX_RE.test(v) ? v : fallback;
+const optHex = (v: unknown) =>
+  typeof v === "string" && HEX_RE.test(v) ? v : undefined;
+
 function sanitizeCustomThemes(raw: unknown): CustomTheme[] {
   if (!Array.isArray(raw)) return [];
   const out: CustomTheme[] = [];
@@ -76,10 +104,57 @@ function sanitizeCustomThemes(raw: unknown): CustomTheme[] {
     const t = item as Record<string, unknown>;
     const id = typeof t.id === "string" && t.id.trim() ? t.id.trim().slice(0, 40) : "";
     const name = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 40) : "";
-    const primary = typeof t.primary === "string" && HEX_RE.test(t.primary) ? t.primary : "#4f46e5";
-    const background = typeof t.background === "string" && HEX_RE.test(t.background) ? t.background : "#0f172a";
-    const accent = typeof t.accent === "string" && HEX_RE.test(t.accent) ? t.accent : "#ef4444";
+    const primary = hexOr(t.primary, "#4f46e5");
+    const background = hexOr(t.background, "#0f172a");
+    const accent = hexOr(t.accent, "#ef4444");
     if (id && name) out.push({ id, name, primary, background, accent });
+  }
+  return out;
+}
+
+function sanitizeUiColors(raw: unknown): UiColorOverrides {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return {
+    enabled: r.enabled === true,
+    primary: hexOr(r.primary, DEFAULT_UI_COLORS.primary),
+    text: hexOr(r.text, DEFAULT_UI_COLORS.text),
+    muted: hexOr(r.muted, DEFAULT_UI_COLORS.muted),
+    accent: hexOr(r.accent, DEFAULT_UI_COLORS.accent),
+    border: hexOr(r.border, DEFAULT_UI_COLORS.border),
+    background: hexOr(r.background, DEFAULT_UI_COLORS.background),
+    bgGradientEnabled: r.bgGradientEnabled === true,
+    bgGradientTo: hexOr(r.bgGradientTo, DEFAULT_UI_COLORS.bgGradientTo),
+    surface: hexOr(r.surface, DEFAULT_UI_COLORS.surface),
+    surfaceGradientEnabled: r.surfaceGradientEnabled === true,
+    surfaceGradientTo: hexOr(r.surfaceGradientTo, DEFAULT_UI_COLORS.surfaceGradientTo),
+  };
+}
+
+function sanitizeSubjectStyle(raw: unknown): SubjectStyle {
+  if (!raw || typeof raw !== "object") return {};
+  const r = raw as Record<string, unknown>;
+  const out: SubjectStyle = {};
+  const bg = optHex(r.bgColor);
+  const bgTo = optHex(r.bgGradientTo);
+  const tc = optHex(r.textColor);
+  if (bg) out.bgColor = bg;
+  if (r.bgGradientEnabled === true) out.bgGradientEnabled = true;
+  if (bgTo) out.bgGradientTo = bgTo;
+  if (tc) out.textColor = tc;
+  if (typeof r.fontFamily === "string" && r.fontFamily.trim()) {
+    out.fontFamily = r.fontFamily.trim().slice(0, 40);
+  }
+  return out;
+}
+
+function sanitizeSubjectStyles(raw: unknown): Record<string, SubjectStyle> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, SubjectStyle> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>).slice(0, 100)) {
+    const key = k.trim().toUpperCase().slice(0, 20);
+    if (!key) continue;
+    const st = sanitizeSubjectStyle(v);
+    if (Object.keys(st).length > 0) out[key] = st;
   }
   return out;
 }
@@ -89,7 +164,7 @@ export function sanitizeSettings(raw: unknown): Settings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const str = (v: unknown, max = 200) => (typeof v === "string" ? v.slice(0, max) : "");
   const customThemes = sanitizeCustomThemes(r.customThemes);
-  const activeId = str(r.activeThemeId, 40) || "light";
+  const activeId = str(r.activeThemeId, 40) || "system";
   return {
     schoolNumber: str(r.schoolNumber, 20).replace(/\D/g, ""),
     username: str(r.username, 100),
@@ -101,5 +176,10 @@ export function sanitizeSettings(raw: unknown): Settings {
     activeThemeId: activeId,
     customThemes,
     rememberWeekZoomPosition: r.rememberWeekZoomPosition !== false,
+    uiColors: sanitizeUiColors(r.uiColors),
+    subjectFontFamily: str(r.subjectFontFamily, 40) || "inherit",
+    subjectColorMode: r.subjectColorMode === "per-subject" ? "per-subject" : "all",
+    allSubjectsStyle: sanitizeSubjectStyle(r.allSubjectsStyle),
+    subjectStyles: sanitizeSubjectStyles(r.subjectStyles),
   };
 }

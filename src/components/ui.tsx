@@ -1,7 +1,9 @@
 "use client";
 import { AlertTriangle, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import type { Lesson } from "@/lib/plan/types";
+import type { Settings } from "@/lib/settings";
+import { resolveSubjectFontCss, type SubjectStyle } from "@/lib/themes";
 
 export const isChanged = (l: Lesson) =>
   l.cancelled || l.faChanged || l.leChanged || l.raChanged || !!l.info;
@@ -12,27 +14,81 @@ const Old = ({ children }: { children: React.ReactNode }) => (
   </s>
 );
 
-/** Fach mit durchgestrichenem altem Fach */
-export function Subject({ l }: { l: Lesson }) {
+/** Berechnet Kachel- und Schrift-Styles für eine Stunde aus den Fächer-Einstellungen. */
+export function resolveLessonStyling(
+  l: Lesson,
+  settings?: Settings
+): { cardStyle?: CSSProperties; subjectStyle?: CSSProperties } {
+  if (!settings) return {};
+  let sub: SubjectStyle | undefined;
+  if (settings.subjectColorMode === "per-subject") {
+    const k1 = (l.origFa || (l.fa !== "---" ? l.fa : "")).trim().toUpperCase();
+    const k2 = (l.fa && l.fa !== "---" ? l.fa : "").trim().toUpperCase();
+    sub = (k1 && settings.subjectStyles[k1]) || (k2 && settings.subjectStyles[k2]) || undefined;
+  } else {
+    sub = settings.allSubjectsStyle;
+  }
+
+  const cardStyle: CSSProperties = {};
+  if (sub?.bgColor) {
+    cardStyle.backgroundColor = sub.bgColor;
+    cardStyle.backgroundImage =
+      sub.bgGradientEnabled && sub.bgGradientTo
+        ? `linear-gradient(135deg, ${sub.bgColor}, ${sub.bgGradientTo})`
+        : "none";
+  }
+
+  const subjectStyle: CSSProperties = {};
+  if (sub?.fontFamily) {
+    subjectStyle.fontFamily = resolveSubjectFontCss(sub.fontFamily);
+  }
+  if (sub?.textColor) {
+    subjectStyle.color = sub.textColor;
+  }
+
+  return {
+    cardStyle: Object.keys(cardStyle).length > 0 ? cardStyle : undefined,
+    subjectStyle: Object.keys(subjectStyle).length > 0 ? subjectStyle : undefined,
+  };
+}
+
+/** Fach: Bei Entfall komplett durchgestrichen; bei Fachänderung nur das geänderte Fach farbig. */
+export function Subject({ l, style }: { l: Lesson; style?: CSSProperties }) {
   if (l.cancelled) {
+    const name = l.origFa || (l.fa && l.fa !== "---" ? l.fa : "") || "Unterricht";
     return (
-      <>
-        <Old>{l.origFa || "Unterricht"}</Old>
-        <span style={{ color: "var(--vp-accent)" }}>Entfällt</span>
-      </>
+      <s
+        className="vp-subject-font line-through font-bold"
+        style={{
+          ...style,
+          color: "var(--vp-accent)",
+          textDecorationColor: "var(--vp-accent)",
+          textDecorationThickness: "2px",
+        }}
+      >
+        {name}
+      </s>
     );
   }
   const oldFa = l.faChanged && l.origFa && l.origFa !== l.fa ? l.origFa : "";
+  const textStyle: CSSProperties = l.faChanged
+    ? { ...style, color: "var(--vp-accent)" }
+    : style ?? {};
+
   return (
-    <>
+    <span className="vp-subject-font" style={textStyle}>
       {oldFa && <Old>{oldFa}</Old>}
       {l.fa || l.origFa}
-    </>
+    </span>
   );
 }
 
 export function Teacher({ l }: { l: Lesson }) {
-  if (l.cancelled) return null;
+  if (l.cancelled) {
+    const orig = l.origLe || l.le;
+    if (!orig) return null;
+    return <s className="line-through opacity-70">{orig}</s>;
+  }
   const oldLe = l.leChanged && l.origLe && l.origLe !== l.le ? l.origLe : "";
   const cur = l.le || (l.leChanged ? "" : l.origLe);
   if (!oldLe && !cur) return null;
@@ -48,7 +104,10 @@ export function Teacher({ l }: { l: Lesson }) {
 }
 
 export function Room({ l }: { l: Lesson }) {
-  if (l.cancelled || !l.ra) return null;
+  if (!l.ra) return null;
+  if (l.cancelled) {
+    return <s className="line-through opacity-70">{l.ra}</s>;
+  }
   return (
     <span
       className={l.raChanged ? "font-semibold" : ""}
@@ -70,14 +129,13 @@ export function WarnBadge({ cancelled }: { cancelled?: boolean }) {
   );
 }
 
-/** Zeile einer Unterrichtsstunde innerhalb einer Tageskarte */
-export function LessonRow({ l }: { l: Lesson }) {
-  const changed = isChanged(l);
+/** Zeile einer Unterrichtsstunde innerhalb einer Tageskarte (färbt nur geänderte Felder, nicht die ganze Kachel). */
+export function LessonRow({ l, settings }: { l: Lesson; settings?: Settings }) {
+  const { cardStyle, subjectStyle } = resolveLessonStyling(l, settings);
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl border p-2.5 transition ${
-        changed ? changedBox : normalBox
-      }`}
+      style={cardStyle}
+      className={`flex items-start gap-3 rounded-xl border p-2.5 transition ${normalBox}`}
     >
       <div className="w-12 shrink-0 text-center">
         <div className="text-lg font-bold leading-none">{l.st}.</div>
@@ -90,9 +148,8 @@ export function LessonRow({ l }: { l: Lesson }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-base font-semibold">
-            <Subject l={l} />
+            <Subject l={l} style={subjectStyle} />
           </span>
-          {changed && <WarnBadge cancelled={l.cancelled} />}
         </div>
         <div className="vp-muted mt-0.5 flex flex-wrap gap-x-3 text-sm">
           <Teacher l={l} />

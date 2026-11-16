@@ -1,4 +1,4 @@
-/** Theme-Engine & Farb-Presets (Phase 5) */
+/** Theme-Engine, Farb-Presets & Fächer-Design */
 export interface ThemePreset {
   id: string;
   name: string;
@@ -27,6 +27,59 @@ export interface CustomTheme {
   background: string;
   accent: string;
 }
+
+export interface SubjectStyle {
+  bgColor?: string;
+  bgGradientEnabled?: boolean;
+  bgGradientTo?: string;
+  textColor?: string;
+  fontFamily?: string;
+}
+
+export interface UiColorOverrides {
+  enabled: boolean;
+  primary: string;
+  text: string;
+  muted: string;
+  accent: string;
+  border: string;
+  background: string;
+  bgGradientEnabled: boolean;
+  bgGradientTo: string;
+  surface: string;
+  surfaceGradientEnabled: boolean;
+  surfaceGradientTo: string;
+}
+
+export const DEFAULT_UI_COLORS: UiColorOverrides = {
+  enabled: false,
+  primary: "#4f46e5",
+  text: "#0f172a",
+  muted: "#64748b",
+  accent: "#ef4444",
+  border: "#e2e8f0",
+  background: "#f8fafc",
+  bgGradientEnabled: false,
+  bgGradientTo: "#e0e7ff",
+  surface: "#ffffff",
+  surfaceGradientEnabled: false,
+  surfaceGradientTo: "#f1f5f9",
+};
+
+export const SUBJECT_FONTS: { id: string; label: string; css: string }[] = [
+  { id: "inherit", label: "Standard (App-Schrift)", css: "inherit" },
+  { id: "sans", label: "Modern Sans", css: "ui-sans-serif, system-ui, -apple-system, sans-serif" },
+  { id: "serif", label: "Klassisch Serif", css: "Georgia, 'Times New Roman', serif" },
+  { id: "mono", label: "Monospace (Technisch)", css: "ui-monospace, SFMono-Regular, Menlo, monospace" },
+  { id: "rounded", label: "Rounded (Weich)", css: "'Segoe UI', 'Trebuchet MS', system-ui, sans-serif" },
+  { id: "slab", label: "Slab / Kräftig", css: "'Rockwell', 'Courier New', Georgia, serif" },
+  { id: "cursive", label: "Handschrift", css: "'Segoe Script', 'Comic Sans MS', cursive" },
+];
+
+export const DEFAULT_SUBJECTS: string[] = [
+  "DE", "MA", "EN", "BI", "PH", "CH", "IF", "PO", "EK", "GE",
+  "KU", "MU", "SP", "RE", "WN", "FR", "LA", "SN", "NW+",
+];
 
 export const MAX_CUSTOM_THEMES = 12;
 
@@ -117,25 +170,64 @@ export function buildCustomPreset(c: CustomTheme): ThemePreset {
   };
 }
 
-export function resolveTheme(activeId: string, customThemes: CustomTheme[]): ThemePreset {
+export function resolveTheme(
+  activeId: string,
+  customThemes: CustomTheme[],
+  systemDark = false
+): ThemePreset {
+  if (activeId === "system") {
+    return systemDark ? BUILTIN_THEMES[1] : BUILTIN_THEMES[0];
+  }
   const builtIn = BUILTIN_THEMES.find((t) => t.id === activeId);
   if (builtIn) return builtIn;
   const custom = customThemes.find((t) => t.id === activeId);
   if (custom) return buildCustomPreset(custom);
-  return BUILTIN_THEMES[0];
+  return systemDark ? BUILTIN_THEMES[1] : BUILTIN_THEMES[0];
 }
 
-/** Wendet das aktive Theme per CSS-Custom-Properties und .dark-Klasse auf <html> an. */
-export function applyThemeToDom(preset: ThemePreset) {
+export function resolveSubjectFontCss(fontId: string | undefined): string {
+  if (!fontId) return "inherit";
+  return SUBJECT_FONTS.find((f) => f.id === fontId)?.css ?? "inherit";
+}
+
+/** Wendet das aktive Theme, optionale UI-Farbüberschreibungen, Verläufe und Fächer-Schrift auf <html> an. */
+export function applyThemeToDom(
+  preset: ThemePreset,
+  uiOverrides?: UiColorOverrides,
+  subjectFontFamily?: string
+) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.classList.toggle("dark", preset.isDark);
-  root.style.setProperty("--vp-primary", preset.primary);
-  root.style.setProperty("--vp-bg", preset.background);
-  root.style.setProperty("--vp-surface", preset.surface);
-  root.style.setProperty("--vp-text", preset.text);
-  root.style.setProperty("--vp-muted", preset.muted);
-  root.style.setProperty("--vp-border", preset.border);
-  root.style.setProperty("--vp-accent", preset.accent);
-  root.style.setProperty("--vp-accent-soft", mix(preset.surface, preset.accent, preset.isDark ? 0.22 : 0.12));
+  const useCustom = uiOverrides?.enabled === true;
+
+  const primary = useCustom ? uiOverrides.primary : preset.primary;
+  const background = useCustom ? uiOverrides.background : preset.background;
+  const surface = useCustom ? uiOverrides.surface : preset.surface;
+  const text = useCustom ? uiOverrides.text : preset.text;
+  const muted = useCustom ? uiOverrides.muted : preset.muted;
+  const border = useCustom ? uiOverrides.border : preset.border;
+  const accent = useCustom ? uiOverrides.accent : preset.accent;
+  const isDark = useCustom ? luminance(background) < 0.5 : preset.isDark;
+
+  const bgImage =
+    useCustom && uiOverrides.bgGradientEnabled
+      ? `linear-gradient(135deg, ${background}, ${uiOverrides.bgGradientTo})`
+      : "none";
+  const surfaceImage =
+    useCustom && uiOverrides.surfaceGradientEnabled
+      ? `linear-gradient(135deg, ${surface}, ${uiOverrides.surfaceGradientTo})`
+      : "none";
+
+  root.classList.toggle("dark", isDark);
+  root.style.setProperty("--vp-primary", primary);
+  root.style.setProperty("--vp-bg", background);
+  root.style.setProperty("--vp-bg-image", bgImage);
+  root.style.setProperty("--vp-surface", surface);
+  root.style.setProperty("--vp-surface-image", surfaceImage);
+  root.style.setProperty("--vp-text", text);
+  root.style.setProperty("--vp-muted", muted);
+  root.style.setProperty("--vp-border", border);
+  root.style.setProperty("--vp-accent", accent);
+  root.style.setProperty("--vp-accent-soft", mix(surface, accent, isDark ? 0.22 : 0.12));
+  root.style.setProperty("--vp-subject-font", resolveSubjectFontCss(subjectFontFamily));
 }

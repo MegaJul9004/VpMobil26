@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 Tage
+    maxAge: 60 * 60 * 24 * 365, // 1 Jahr (kein erneuter Login nach Reload/Update)
   });
   return res;
 }

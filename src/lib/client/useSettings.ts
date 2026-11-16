@@ -5,7 +5,19 @@ import { applyThemeToDom, resolveTheme } from "@/lib/themes";
 
 const KEY = "vp:settings";
 
-/** Zentraler Settings-State mit Persistenz in localStorage & automatischer Theme-Anwendung. */
+const isSystemDark = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+function syncDom(s: Settings) {
+  applyThemeToDom(
+    resolveTheme(s.activeThemeId, s.customThemes, isSystemDark()),
+    s.uiColors,
+    s.subjectFontFamily
+  );
+}
+
+/** Zentraler Settings-State mit Persistenz in localStorage & automatischer Theme-/System-Anwendung. */
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [ready, setReady] = useState(false);
@@ -16,23 +28,29 @@ export function useSettings() {
         const raw = localStorage.getItem(KEY);
         const next = raw ? sanitizeSettings(JSON.parse(raw)) : DEFAULT_SETTINGS;
         setSettings(next);
-        applyThemeToDom(resolveTheme(next.activeThemeId, next.customThemes));
+        syncDom(next);
       } catch {
         setSettings(DEFAULT_SETTINGS);
-        applyThemeToDom(resolveTheme(DEFAULT_SETTINGS.activeThemeId, DEFAULT_SETTINGS.customThemes));
+        syncDom(DEFAULT_SETTINGS);
       }
     };
     load();
     setReady(true);
+
     const onStorage = (e: StorageEvent) => e.key === KEY && load();
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  // Aktualisiere DOM bei Theme-, Farb- oder Schrift-Änderung sowie bei System-Wechsel (Dark/Light Mode)
   useEffect(() => {
     if (!ready) return;
-    applyThemeToDom(resolveTheme(settings.activeThemeId, settings.customThemes));
-  }, [settings.activeThemeId, settings.customThemes, ready]);
+    syncDom(settings);
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onSystemChange = () => syncDom(settings);
+    mq.addEventListener("change", onSystemChange);
+    return () => mq.removeEventListener("change", onSystemChange);
+  }, [settings, ready]);
 
   const update = useCallback((patch: Partial<Settings> | ((prev: Settings) => Partial<Settings>)) => {
     setSettings((prev) => {
@@ -41,7 +59,7 @@ export function useSettings() {
       try {
         localStorage.setItem(KEY, JSON.stringify(next));
       } catch {}
-      applyThemeToDom(resolveTheme(next.activeThemeId, next.customThemes));
+      syncDom(next);
       return next;
     });
   }, []);

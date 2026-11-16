@@ -23,8 +23,8 @@ export const viewport: Viewport = {
   ],
 };
 
-// Setzt den Dark-Mode vor dem ersten Paint (kein Flackern)
-const themeScript = `try{var t=localStorage.getItem('vp:theme');t=t?JSON.parse(t):'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}`;
+// Setzt den Dark-Mode vor dem ersten Paint anhand von vp:settings oder System-Einstellung
+const themeScript = `try{var r=localStorage.getItem('vp:settings');var s=r?JSON.parse(r):null;var id=s&&s.activeThemeId?s.activeThemeId:'system';var sys=matchMedia('(prefers-color-scheme: dark)').matches;var d=id==='dark'||id==='ocean'||(id==='system'&&sys);document.documentElement.classList.toggle('dark',d)}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
