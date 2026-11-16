@@ -58,7 +58,7 @@ export function resolveLessonStyling(
   };
 }
 
-/** Diagonale Durchstreichung über die gesamte Kachel bei Unterrichtsausfall */
+/** Diagonale Durchstreichung mit genau einer Linie über die gesamte Kachel bei Unterrichtsausfall */
 export function CancelledTileOverlay() {
   return (
     <svg
@@ -75,20 +75,11 @@ export function CancelledTileOverlay() {
         stroke="var(--vp-accent)"
         strokeWidth="2.5"
       />
-      <line
-        x1="0"
-        y1="0"
-        x2="100%"
-        y2="100%"
-        stroke="var(--vp-accent)"
-        strokeWidth="1.5"
-        strokeOpacity="0.45"
-      />
     </svg>
   );
 }
 
-/** Fach: Ausgeschrieben (wenn aktiviert), bei Entfall durchgestrichen, bei Änderung nur Fach farbig. */
+/** Fach: Ausgeschrieben (wenn aktiviert), bei Entfall farbig (durch Kachel-Linie durchgestrichen), bei Änderung nur Fach farbig. */
 export function Subject({
   l,
   style,
@@ -105,17 +96,15 @@ export function Subject({
   if (l.cancelled) {
     const raw = l.origFa || (l.fa && l.fa !== "---" ? l.fa : "") || "Unterricht";
     return (
-      <s
-        className="vp-subject-font line-through font-bold"
+      <span
+        className="vp-subject-font font-bold"
         style={{
           ...style,
           color: "var(--vp-accent)",
-          textDecorationColor: "var(--vp-accent)",
-          textDecorationThickness: "2px",
         }}
       >
         {label(raw)}
-      </s>
+      </span>
     );
   }
   const oldFa = l.faChanged && l.origFa && l.origFa !== l.fa ? label(l.origFa) : "";
@@ -136,7 +125,7 @@ export function Teacher({ l }: { l: Lesson }) {
   if (l.cancelled) {
     const orig = l.origLe || l.le;
     if (!orig) return null;
-    return <s className="line-through opacity-70">{orig}</s>;
+    return <span className="opacity-70">{orig}</span>;
   }
   const oldLe = l.leChanged && l.origLe && l.origLe !== l.le ? l.origLe : "";
   const cur = l.le || (l.leChanged ? "" : l.origLe);
@@ -155,7 +144,7 @@ export function Teacher({ l }: { l: Lesson }) {
 export function Room({ l }: { l: Lesson }) {
   if (!l.ra) return null;
   if (l.cancelled) {
-    return <s className="line-through opacity-70">{l.ra}</s>;
+    return <span className="opacity-70">{l.ra}</span>;
   }
   return (
     <span
